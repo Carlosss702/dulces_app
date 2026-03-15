@@ -4,58 +4,313 @@
   <meta charset="UTF-8">
   <meta name="viewport"
         content="width=device-width,initial-scale=1">
-  <title>Panel — Dulces</title>
+  <title>Dashboard — Dulces</title>
   <link rel="stylesheet" href="../css/estilos.css">
   <style>
-    .bienvenida {
-      max-width: 400px; margin: 4rem auto;
-      padding: 2rem; background: #fff;
-      border-radius: 16px; border: 0.5px solid #ddd;
-      text-align: center;
-    }
-    .bienvenida h2 { color: #534AB7; margin-bottom: .5rem; }
-    .bienvenida p  { color: #888; font-size: 14px; }
-    .tag { display:inline-block; background:#EEEDFE;
-           color:#3C3489; border-radius:20px;
-           padding:4px 12px; font-size:13px;
-           font-weight:500; margin: 1rem 0; }
-    .btn-salir { margin-top:1.5rem; background:#f5f3ee;
-                 color:#555; border:0.5px solid #ddd;
-                 border-radius:8px; padding:10px 20px;
-                 cursor:pointer; font-size:14px; width:auto; }
+    body { background:#f5f3ee; min-height:100vh; }
+
+    .topbar { display:flex; align-items:center;
+      justify-content:space-between;
+      padding:14px 16px; background:#534AB7;
+      color:#fff; }
+    .topbar-titulo { font-size:16px;
+      font-weight:500; }
+    .topbar-fecha { font-size:12px;
+      opacity:.8; }
+    .btn-salir { background:rgba(255,255,255,.15);
+      color:#fff; border:none; border-radius:8px;
+      padding:6px 12px; font-size:12px;
+      cursor:pointer; width:auto; }
+
+    .nav { display:flex; background:#fff;
+      border-bottom:0.5px solid #eee;
+      overflow-x:auto; }
+    .nav::-webkit-scrollbar{ display:none }
+    .nav-item { padding:12px 16px; font-size:13px;
+      font-weight:500; color:#888; cursor:pointer;
+      white-space:nowrap; border-bottom:2px solid
+      transparent; transition:all .15s; }
+    .nav-item.active { color:#534AB7;
+      border-bottom-color:#534AB7; }
+
+    .seccion { padding:12px 16px; }
+
+    .metrics { display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px; margin-bottom:12px; }
+    .metric { background:#fff; border-radius:10px;
+      padding:14px; border:0.5px solid #eee; }
+    .metric-label { font-size:11px; color:#888;
+      margin-bottom:6px; }
+    .metric-num { font-size:22px; font-weight:600;
+      color:#1a1a1a; }
+    .metric-sub { font-size:11px; color:#aaa;
+      margin-top:3px; }
+
+    .vend-card { background:#fff; border-radius:10px;
+      padding:14px; margin-bottom:8px;
+      border:0.5px solid #eee; }
+    .vend-header { display:flex;
+      justify-content:space-between;
+      align-items:center; margin-bottom:10px; }
+    .vend-nombre { font-size:14px;
+      font-weight:500; color:#1a1a1a; }
+    .vend-estado { font-size:11px; padding:3px 8px;
+      border-radius:20px; font-weight:500; }
+    .estado-ruta  { background:#E1F5EE;
+      color:#085041; }
+    .estado-listo { background:#EEEDFE;
+      color:#3C3489; }
+    .estado-sin   { background:#f5f3ee;
+      color:#888; }
+
+    .vend-metricas { display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:6px; }
+    .vm { text-align:center; background:#f5f3ee;
+      border-radius:8px; padding:8px 4px; }
+    .vm-num { font-size:14px; font-weight:600;
+      color:#1a1a1a; }
+    .vm-label { font-size:10px; color:#888;
+      margin-top:2px; }
+
+    .creditos-item { display:flex;
+      justify-content:space-between;
+      align-items:center; padding:10px 0;
+      border-bottom:0.5px solid #f0ede6; }
+    .creditos-item:last-child { border-bottom:none }
+    .cred-tienda { font-size:13px;
+      font-weight:500; color:#1a1a1a; }
+    .cred-vend { font-size:11px;
+      color:#888; margin-top:2px; }
+    .cred-monto { font-size:14px;
+      font-weight:600; color:#BA7517; }
+
+    .sec-titulo { font-size:12px; font-weight:500;
+      color:#888; text-transform:uppercase;
+      letter-spacing:.04em; margin-bottom:8px; }
+    .empty { text-align:center; padding:1.5rem;
+      color:#bbb; font-size:13px; }
+    .loading { text-align:center; padding:2rem;
+      color:#aaa; font-size:14px; }
   </style>
 </head>
 <body>
 
-<div class="bienvenida">
-  <h2>Panel del dueño</h2>
-  <div class="tag" id="rol-tag">cargando...</div>
-  <p id="nombre-usuario"></p>
-  <p style="margin-top:1rem;color:#aaa;font-size:13px">
-    Panel completo en construcción — fase 6
-  </p>
+<div class="topbar">
+  <div>
+    <div class="topbar-titulo">Panel del dueño</div>
+    <div class="topbar-fecha" id="fecha-hoy"></div>
+  </div>
   <button class="btn-salir"
-          onclick="cerrarSesion()">
-    Cerrar sesión
-  </button>
+          onclick="cerrarSesion()">Salir</button>
+</div>
+
+<div class="nav">
+  <div class="nav-item active">Dashboard</div>
+  <div class="nav-item"
+       onclick="location.href='reportes.html'">
+    Reportes</div>
+  <div class="nav-item"
+       onclick="location.href='cortes.html'">
+    Cortes</div>
+  <div class="nav-item"
+       onclick="location.href='bodega.html'">
+    Bodega</div>
+  <div class="nav-item"
+       onclick="location.href='vendedores.html'">
+    Vendedores</div>
+</div>
+
+<div class="seccion" id="contenido">
+  <div class="loading">Cargando datos...</div>
 </div>
 
 <script type="module">
-  import { getUsuario, cerrarSesion as logout }
-    from '../js/supabase.js'
+import { supabase, getUsuario,
+         cerrarSesion as logout }
+  from '../js/supabase.js'
 
+async function iniciar() {
   const usuario = await getUsuario()
   if (!usuario) {
     location.href = '../paginas/login.html'
+    return
+  }
+  if (![ 'dueno','admin' ]
+      .includes(usuario.rol)) {
+    location.href = '../paginas/ruta.html'
+    return
   }
 
-  document.getElementById('nombre-usuario')
-    .textContent = `Bienvenido, ${usuario.nombre}`
+  const hoy = new Date()
+  document.getElementById('fecha-hoy')
+    .textContent = hoy.toLocaleDateString(
+      'es-MX',{ weekday:'long',
+        day:'numeric', month:'long' })
 
-  document.getElementById('rol-tag')
-    .textContent = usuario.rol
+  const fechaHoy = hoy.toISOString()
+    .split('T')[0]
 
-  window.cerrarSesion = logout
+  // — Cargar vendedores —
+  const { data: vendedores } = await supabase
+    .from('usuarios')
+    .select('id, nombre')
+    .eq('rol', 'vendedor')
+    .eq('activo', true)
+
+  // — Visitas de hoy con ventas —
+  const { data: visitas } = await supabase
+    .from('visitas')
+    .select(`
+      id, vendedor_id, estado,
+      ventas ( total, estado_pago,
+               monto_abonado )
+    `)
+    .eq('fecha', fechaHoy)
+
+  // — Tiendas con saldo pendiente —
+  const { data: tiendas } = await supabase
+    .from('tiendas')
+    .select(`
+      nombre, saldo_credito,
+      usuarios ( nombre )
+    `)
+    .gt('saldo_credito', 0)
+    .order('saldo_credito',
+      { ascending: false })
+    .limit(10)
+
+// — Calcular totales globales —
+let totalVendido = 0
+let totalCobrado = 0
+let totalCredito = 0
+let totalVisitas = (visitas || []).length
+
+;(visitas || []).forEach(v => {
+  // Supabase puede devolver array u objeto
+  // según la versión — manejamos ambos casos
+  const venta = Array.isArray(v.ventas)
+    ? v.ventas[0] : v.ventas
+  if (venta) {
+    totalVendido +=
+      parseFloat(venta.total || 0)
+    totalCobrado +=
+      parseFloat(venta.monto_abonado || 0)
+    if (venta.estado_pago === 'credito')
+      totalCredito +=
+        parseFloat(venta.total || 0)
+  }
+})
+
+// — Datos por vendedor —
+const porVendedor = {}
+;(vendedores || []).forEach(v => {
+  porVendedor[v.id] = {
+    nombre : v.nombre,
+    vendido: 0,
+    cobrado: 0,
+    visitas: 0,
+    enRuta : false
+  }
+})
+;(visitas || []).forEach(v => {
+  if (!porVendedor[v.vendedor_id]) return
+  porVendedor[v.vendedor_id].visitas++
+  porVendedor[v.vendedor_id].enRuta = true
+  const venta = Array.isArray(v.ventas)
+    ? v.ventas[0] : v.ventas
+  if (venta) {
+    porVendedor[v.vendedor_id].vendido +=
+      parseFloat(venta.total || 0)
+    porVendedor[v.vendedor_id].cobrado +=
+      parseFloat(venta.monto_abonado || 0)
+  }
+})
+
+  // — Renderizar —
+  const contenido =
+    document.getElementById('contenido')
+
+  contenido.innerHTML = `
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">
+        Total vendido hoy</div>
+      <div class="metric-num">
+        $${totalVendido.toFixed(2)}</div>
+      <div class="metric-sub">
+        ${totalVisitas} visitas registradas</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">
+        Cobrado en efectivo</div>
+      <div class="metric-num"
+           style="color:#1D9E75">
+        $${totalCobrado.toFixed(2)}</div>
+      <div class="metric-sub"
+           style="color:#BA7517">
+        $${totalCredito.toFixed(2)} a crédito</div>
+    </div>
+  </div>
+
+  <div class="sec-titulo">Vendedores hoy</div>
+  ${Object.values(porVendedor).map(v => `
+    <div class="vend-card">
+      <div class="vend-header">
+        <span class="vend-nombre">
+          ${v.nombre}</span>
+        <span class="vend-estado
+          ${v.enRuta
+            ? v.visitas > 0
+              ? 'estado-ruta' : 'estado-sin'
+            : 'estado-sin'}">
+          ${v.enRuta ? 'En ruta' : 'Sin actividad'}
+        </span>
+      </div>
+      <div class="vend-metricas">
+        <div class="vm">
+          <div class="vm-num">
+            ${v.visitas}</div>
+          <div class="vm-label">Visitas</div>
+        </div>
+        <div class="vm">
+          <div class="vm-num">
+            $${v.vendido.toFixed(0)}</div>
+          <div class="vm-label">Vendido</div>
+        </div>
+        <div class="vm">
+          <div class="vm-num"
+               style="color:#1D9E75">
+            $${v.cobrado.toFixed(0)}</div>
+          <div class="vm-label">Cobrado</div>
+        </div>
+      </div>
+    </div>`).join('')}
+
+  <div class="sec-titulo"
+       style="margin-top:16px">
+    Tiendas con saldo pendiente</div>
+  <div class="vend-card">
+    ${!tiendas || !tiendas.length
+      ? '<div class="empty">Sin saldos pendientes</div>'
+      : tiendas.map(t => `
+        <div class="creditos-item">
+          <div>
+            <div class="cred-tienda">
+              ${t.nombre}</div>
+            <div class="cred-vend">
+              ${t.usuarios?.nombre || '—'}</div>
+          </div>
+          <span class="cred-monto">
+            $${parseFloat(t.saldo_credito)
+              .toFixed(2)}</span>
+        </div>`).join('')}
+  </div>`
+}
+
+iniciar()
+window.cerrarSesion = logout
 </script>
 
 </body>
