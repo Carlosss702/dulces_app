@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width,initial-scale=1">
+  <title>Panel — Dulces</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <style>
+    .bienvenida {
+      max-width: 400px; margin: 4rem auto;
+      padding: 2rem; background: #fff;
+      border-radius: 16px; border: 0.5px solid #ddd;
+      text-align: center;
+    }
+    .bienvenida h2 { color: #534AB7; margin-bottom: .5rem; }
+    .bienvenida p  { color: #888; font-size: 14px; }
+    .tag { display:inline-block; background:#EEEDFE;
+           color:#3C3489; border-radius:20px;
+           padding:4px 12px; font-size:13px;
+           font-weight:500; margin: 1rem 0; }
+    .btn-salir { margin-top:1.5rem; background:#f5f3ee;
+                 color:#555; border:0.5px solid #ddd;
+                 border-radius:8px; padding:10px 20px;
+                 cursor:pointer; font-size:14px; width:auto; }
+  </style>
+</head>
+<body>
+
+<div class="bienvenida">
+  <h2>Panel del dueño</h2>
+  <div class="tag" id="rol-tag">cargando...</div>
+  <p id="nombre-usuario"></p>
+  <p style="margin-top:1rem;color:#aaa;font-size:13px">
+    Panel completo en construcción — fase 6
+  </p>
+  <button class="btn-salir"
+          onclick="cerrarSesion()">
+    Cerrar sesión
+  </button>
+</div>
+
+<script type="module">
+  import { getUsuario, cerrarSesion as logout }
+    from '../js/supabase.js'
+
+  const usuario = await getUsuario()
+  if (!usuario) {
+    location.href = '../paginas/login.html'
+  }
+
+  document.getElementById('nombre-usuario')
+    .textContent = `Bienvenido, ${usuario.nombre}`
+
+  document.getElementById('rol-tag')
+    .textContent = usuario.rol
+
+  window.cerrarSesion = logout
+</script>
+
+</body>
+</html>

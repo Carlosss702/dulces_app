@@ -1,0 +1,94 @@
+<!-- paginas/login.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>Dulces — Iniciar sesión</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body>
+
+<div class="login-container">
+  <div class="login-card">
+
+    <div class="login-logo">
+      <h1>Dulces</h1>
+      <p>Sistema de rutas</p>
+    </div>
+
+    <div id="error-msg" class="error-box"
+         style="display:none"></div>
+
+    <div class="campo">
+      <label>Correo</label>
+      <input type="email" id="email"
+             placeholder="tu@correo.com"
+             autocomplete="email">
+    </div>
+
+    <div class="campo">
+      <label>Contraseña</label>
+      <input type="password" id="password"
+             placeholder="••••••••"
+             autocomplete="current-password">
+    </div>
+
+    <button id="btn-login"
+            onclick="iniciarSesion()">
+      Entrar
+    </button>
+
+  </div>
+</div>
+
+<script type="module">
+  import { supabase, getUsuario }
+    from '../js/supabase.js'
+
+  // Si ya hay sesión activa, redirigir directo
+  const usuario = await getUsuario()
+  if (usuario) redirigir(usuario.rol)
+
+  window.iniciarSesion = async () => {
+    const email    = document.getElementById('email').value
+    const password = document.getElementById('password').value
+    const btn      = document.getElementById('btn-login')
+
+    btn.textContent = 'Entrando...'
+    btn.disabled    = true
+
+    const { error } = await supabase.auth.signInWithPassword(
+      { email, password }
+    )
+
+    if (error) {
+      mostrarError('Correo o contraseña incorrectos')
+      btn.textContent = 'Entrar'
+      btn.disabled    = false
+      return
+    }
+
+    const user = await getUsuario()
+    redirigir(user.rol)
+  }
+
+  function redirigir(rol) {
+    const destinos = {
+      vendedor : '../paginas/ruta.html',
+      dueno    : '../panel/dashboard.html',
+      admin    : '../panel/dashboard.html'
+    }
+    location.href = destinos[rol] ?? 'ruta.html'
+  }
+
+  function mostrarError(msg) {
+    const el = document.getElementById('error-msg')
+    el.textContent  = msg
+    el.style.display = 'block'
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width,initial-scale=1">
+  <title>Ruta del día</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <style>
+    .topbar { display:flex; align-items:center;
+      justify-content:space-between; padding:16px;
+      background:#fff; border-bottom:0.5px solid #eee;
+      position:sticky; top:0; z-index:10; }
+    .topbar-nombre { font-size:15px; font-weight:500; }
+    .topbar-fecha  { font-size:12px; color:#888; }
+    .btn-salir { font-size:12px; background:#f5f3ee;
+      color:#888; border:0.5px solid #ddd;
+      border-radius:8px; padding:6px 12px;
+      cursor:pointer; width:auto; }
+
+    .resumen { display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:8px; padding:12px 16px; }
+    .res-card { background:#f5f3ee;
+      border-radius:10px; padding:10px;
+      text-align:center; }
+    .res-num  { font-size:20px; font-weight:500;
+      color:#1a1a1a; }
+    .res-label{ font-size:11px; color:#888;
+      margin-top:2px; }
+
+    .seccion-label { font-size:12px; font-weight:500;
+      color:#888; padding:8px 16px 4px;
+      text-transform:uppercase; letter-spacing:.04em; }
+
+    .tienda-card { display:flex; align-items:center;
+      gap:12px; padding:14px 16px;
+      border-bottom:0.5px solid #f0ede6;
+      cursor:pointer; transition:background .1s;
+      background:#fff; }
+    .tienda-card:active { background:#f5f3ee; }
+    .tienda-num { width:28px; height:28px;
+      border-radius:50%; background:#f5f3ee;
+      display:flex; align-items:center;
+      justify-content:center; font-size:13px;
+      font-weight:500; color:#888; flex-shrink:0; }
+    .tienda-info { flex:1; }
+    .tienda-nombre { font-size:14px; font-weight:500;
+      color:#1a1a1a; }
+    .tienda-dir { font-size:12px; color:#888;
+      margin-top:2px; }
+    .tienda-badge { font-size:11px; padding:3px 8px;
+      border-radius:20px; font-weight:500;
+      flex-shrink:0; }
+    .badge-pend { background:#f5f3ee; color:#888; }
+    .badge-visit{ background:#E1F5EE; color:#085041; }
+    .badge-sin  { background:#FAEEDA; color:#633806; }
+    .chevron { color:#ccc; font-size:16px; }
+
+    .empty { text-align:center; padding:3rem 1rem;
+      color:#aaa; font-size:14px; }
+    .loading{ text-align:center; padding:2rem;
+      color:#aaa; font-size:14px; }
+  </style>
+</head>
+<body style="background:#f5f3ee;min-height:100vh">
+
+<div class="topbar">
+  <div>
+    <div class="topbar-nombre" id="nombre-vendor">
+      Cargando...</div>
+    <div class="topbar-fecha" id="fecha-hoy"></div>
+  </div>
+  <button class="btn-salir"
+          onclick="cerrarSesion()">Salir</button>
+</div>
+
+<div class="resumen">
+  <div class="res-card">
+    <div class="res-num" id="total-tiendas">—</div>
+    <div class="res-label">Tiendas</div>
+  </div>
+  <div class="res-card">
+    <div class="res-num"
+         id="total-visitadas"
+         style="color:#1D9E75">—</div>
+    <div class="res-label">Visitadas</div>
+  </div>
+  <div class="res-card">
+    <div class="res-num"
+         id="total-pendientes"
+         style="color:#BA7517">—</div>
+    <div class="res-label">Pendientes</div>
+  </div>
+</div>
+
+<div class="seccion-label">Ruta de hoy</div>
+<div id="lista-tiendas">
+  <div class="loading">Cargando tiendas...</div>
+</div>
+
+<script type="module">
+import { supabase, getUsuario, cerrarSesion as logout }
+  from '../js/supabase.js'
+
+async function iniciar() {
+
+  // — Proteger la página —
+  const usuario = await getUsuario()
+  if (!usuario) {
+    location.href = 'login.html'
+    return
+  }
+  if (usuario.rol !== 'vendedor') {
+    location.href = '../panel/dashboard.html'
+    return
+  }
+
+  // — Mostrar nombre y fecha —
+  document.getElementById('nombre-vendor')
+    .textContent = usuario.nombre
+
+  const hoy = new Date()
+  document.getElementById('fecha-hoy').textContent =
+    hoy.toLocaleDateString('es-MX', {
+      weekday: 'long', day: 'numeric',
+      month:   'long'
+    })
+
+  // — Cargar tiendas del vendedor —
+  const { data: tiendas, error } = await supabase
+    .from('tiendas')
+    .select('*')
+    .eq('vendedor_id', usuario.id)
+    .eq('activo', true)
+    .order('orden_ruta')
+
+  if (error) {
+    console.error('Error tiendas:', error)
+    document.getElementById('lista-tiendas')
+      .innerHTML = '<div class="empty">' +
+        'Error al cargar tiendas. Revisa la consola.</div>'
+    return
+  }
+
+  // — Cargar visitas de hoy —
+  const fechaHoy = hoy.toISOString().split('T')[0]
+  const { data: visitas } = await supabase
+    .from('visitas')
+    .select('*')
+    .eq('vendedor_id', usuario.id)
+    .eq('fecha', fechaHoy)
+
+  // Mapa rápido: tienda_id → estado visita
+  const mapaVisitas = {}
+  ;(visitas || []).forEach(v => {
+    mapaVisitas[v.tienda_id] = v.estado
+  })
+
+  // — Contadores del resumen —
+  const visitadas  = (visitas || [])
+    .filter(v => v.estado === 'visitada').length
+  const pendientes = tiendas.length - visitadas
+
+  document.getElementById('total-tiendas')
+    .textContent = tiendas.length
+  document.getElementById('total-visitadas')
+    .textContent = visitadas
+  document.getElementById('total-pendientes')
+    .textContent = pendientes
+
+  // — Renderizar lista —
+  if (!tiendas.length) {
+    document.getElementById('lista-tiendas')
+      .innerHTML = '<div class="empty">' +
+        'No tienes tiendas asignadas</div>'
+    return
+  }
+
+  document.getElementById('lista-tiendas').innerHTML =
+    tiendas.map(t => {
+      const estado = mapaVisitas[t.id] || 'pendiente'
+      const badges = {
+        pendiente : ['badge-pend',  'Pendiente'],
+        visitada  : ['badge-visit', 'Visitada'],
+        sin_venta : ['badge-sin',   'Sin venta']
+      }
+      const [cls, txt] = badges[estado]
+      return `
+      <div class="tienda-card"
+           onclick="irATienda('${t.id}','${t.nombre}')">
+        <div class="tienda-num">${t.orden_ruta}</div>
+        <div class="tienda-info">
+          <div class="tienda-nombre">${t.nombre}</div>
+          <div class="tienda-dir">
+            ${t.direccion || 'Sin dirección'}</div>
+        </div>
+        <span class="tienda-badge ${cls}">${txt}</span>
+        <span class="chevron">›</span>
+      </div>`
+    }).join('')
+
+  // — Navegar al detalle —
+  window.irATienda = (id, nombre) => {
+    sessionStorage.setItem('tienda_id',    id)
+    sessionStorage.setItem('tienda_nombre', nombre)
+    location.href = 'detalle-tienda.html'
+  }
+}
+
+iniciar()
+window.cerrarSesion = logout
+</script>
+
+</body>
+</html>
