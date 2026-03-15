@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width,initial-scale=1">
+  <title>Detalle de tienda</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <style>
+    body { background:#f5f3ee; min-height:100vh; }
+    .topbar { display:flex; align-items:center;
+      gap:10px; padding:14px 16px; background:#fff;
+      border-bottom:0.5px solid #eee;
+      position:sticky; top:0; z-index:10; }
+    .btn-back { background:#f5f3ee; color:#555;
+      border:0.5px solid #ddd; border-radius:8px;
+      padding:6px 12px; font-size:13px;
+      cursor:pointer; width:auto; }
+    .topbar-titulo { font-size:15px;
+      font-weight:500; color:#1a1a1a; }
+
+    .tienda-header { background:#fff;
+      padding:16px; margin-bottom:8px; }
+    .tienda-nombre { font-size:18px;
+      font-weight:600; color:#1a1a1a; }
+    .tienda-prop { font-size:13px;
+      color:#888; margin-top:3px; }
+    .tienda-dir  { font-size:13px;
+      color:#888; margin-top:2px; }
+    .saldo-box { display:inline-block;
+      background:#FAEEDA; color:#633806;
+      border-radius:8px; padding:6px 12px;
+      font-size:13px; font-weight:500;
+      margin-top:10px; }
+    .saldo-cero { background:#E1F5EE;
+      color:#085041; }
+
+    .seccion { padding:8px 16px 4px;
+      font-size:12px; font-weight:500;
+      color:#888; text-transform:uppercase;
+      letter-spacing:.04em; }
+
+    .hist-item { background:#fff;
+      padding:12px 16px;
+      border-bottom:0.5px solid #f0ede6; }
+    .hist-fecha { font-size:12px;
+      color:#888; margin-bottom:4px; }
+    .hist-row { display:flex;
+      justify-content:space-between;
+      align-items:center; }
+    .hist-total { font-size:14px;
+      font-weight:500; color:#1a1a1a; }
+    .hist-badge { font-size:11px;
+      padding:2px 8px; border-radius:20px;
+      font-weight:500; }
+    .b-contado { background:#E1F5EE;
+      color:#085041; }
+    .b-credito { background:#FAEEDA;
+      color:#633806; }
+    .b-abono   { background:#E6F1FB;
+      color:#0C447C; }
+    .b-sin     { background:#f5f3ee;
+      color:#888; }
+    .hist-notas { font-size:12px;
+      color:#aaa; margin-top:4px;
+      font-style:italic; }
+    .empty { text-align:center;
+      padding:2rem; color:#aaa;
+      font-size:13px; }
+
+    .acciones { padding:16px; }
+    .btn-visita { width:100%; padding:14px;
+      background:#1D9E75; color:#fff;
+      border:none; border-radius:12px;
+      font-size:15px; font-weight:500;
+      cursor:pointer; margin-bottom:8px; }
+    .btn-sin-venta { width:100%; padding:12px;
+      background:#fff; color:#888;
+      border:0.5px solid #ddd;
+      border-radius:12px; font-size:14px;
+      cursor:pointer; }
+    .btn-ya-visitada { width:100%; padding:14px;
+      background:#f5f3ee; color:#1D9E75;
+      border:0.5px solid #1D9E75;
+      border-radius:12px; font-size:15px;
+      font-weight:500; cursor:default; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="btn-back"
+          onclick="history.back()">← Ruta</button>
+  <span class="topbar-titulo"
+        id="titulo-tienda">Cargando...</span>
+</div>
+
+<div class="tienda-header">
+  <div class="tienda-nombre"
+       id="tienda-nombre"></div>
+  <div class="tienda-prop"
+       id="tienda-prop"></div>
+  <div class="tienda-dir"
+       id="tienda-dir"></div>
+  <div id="saldo-box"></div>
+</div>
+
+<div class="seccion">Historial de visitas</div>
+<div id="historial">
+  <div class="empty">Cargando...</div>
+</div>
+
+<div class="acciones" id="acciones"></div>
+
+<script type="module">
+import { supabase, getUsuario }
+  from '../js/supabase.js'
+
+async function iniciar() {
+
+  // — Proteger página —
+  const usuario = await getUsuario()
+  if (!usuario) {
+    location.href = 'login.html'; return
+  }
+
+  // — Leer tienda del sessionStorage —
+  const tiendaId     = sessionStorage.getItem('tienda_id')
+  const tiendaNombre = sessionStorage.getItem('tienda_nombre')
+
+  if (!tiendaId) {
+    location.href = 'ruta.html'; return
+  }
+
+  document.getElementById('titulo-tienda')
+    .textContent = tiendaNombre
+
+  // — Cargar datos completos de la tienda —
+  const { data: tienda } = await supabase
+    .from('tiendas')
+    .select('*')
+    .eq('id', tiendaId)
+    .single()
+
+  if (tienda) {
+    document.getElementById('tienda-nombre')
+      .textContent = tienda.nombre
+    document.getElementById('tienda-prop')
+      .textContent = tienda.propietario
+        ? `Dueño: ${tienda.propietario}` : ''
+    document.getElementById('tienda-dir')
+      .textContent = tienda.direccion || ''
+
+    const saldo = parseFloat(tienda.saldo_credito || 0)
+    document.getElementById('saldo-box').innerHTML =
+      saldo > 0
+        ? `<div class="saldo-box">
+            Saldo pendiente: $${saldo.toFixed(2)}
+           </div>`
+        : `<div class="saldo-box saldo-cero">
+            Sin deuda pendiente
+           </div>`
+  }
+
+  // — Cargar historial de visitas —
+  const { data: visitas } = await supabase
+    .from('visitas')
+    .select(`
+      id, fecha, estado, notas,
+      ventas ( total, estado_pago )
+    `)
+    .eq('tienda_id', tiendaId)
+    .order('fecha', { ascending: false })
+    .limit(10)
+
+  const hist = document.getElementById('historial')
+
+  if (!visitas || !visitas.length) {
+    hist.innerHTML =
+      '<div class="empty">Sin visitas anteriores</div>'
+  } else {
+    hist.innerHTML = visitas.map(v => {
+      const fecha = new Date(v.fecha + 'T12:00:00')
+        .toLocaleDateString('es-MX', {
+          weekday:'short', day:'numeric',
+          month: 'short'
+        })
+      if (v.estado === 'sin_venta') {
+        return `<div class="hist-item">
+          <div class="hist-fecha">${fecha}</div>
+          <div class="hist-row">
+            <span class="hist-total">Sin venta</span>
+            <span class="hist-badge b-sin">Sin venta</span>
+          </div>
+          ${v.notas
+            ? `<div class="hist-notas">${v.notas}</div>`
+            : ''}
+        </div>`
+      }
+      const venta = v.ventas
+      const badgeMap = {
+        contado: ['b-contado','Contado'],
+        credito: ['b-credito','Crédito'],
+        abono:   ['b-abono',  'Abono']
+      }
+      const [bc, bt] = venta
+        ? (badgeMap[venta.estado_pago] || ['b-sin','—'])
+        : ['b-sin','Visitada']
+      return `<div class="hist-item">
+        <div class="hist-fecha">${fecha}</div>
+        <div class="hist-row">
+          <span class="hist-total">
+            ${venta
+              ? '$' + parseFloat(venta.total).toFixed(2)
+              : 'Sin venta registrada'}
+          </span>
+          <span class="hist-badge ${bc}">${bt}</span>
+        </div>
+        ${v.notas
+          ? `<div class="hist-notas">${v.notas}</div>`
+          : ''}
+      </div>`
+    }).join('')
+  }
+
+  // — Verificar si ya hay visita hoy —
+  const fechaHoy = new Date()
+    .toISOString().split('T')[0]
+  const visitaHoy = (visitas || [])
+    .find(v => v.fecha === fechaHoy)
+
+  // — Botones de acción —
+  const acciones =
+    document.getElementById('acciones')
+
+  if (visitaHoy?.estado === 'visitada') {
+    acciones.innerHTML = `
+      <button class="btn-ya-visitada">
+        ✓ Ya visitada hoy
+      </button>`
+  } else {
+    acciones.innerHTML = `
+      <button class="btn-visita"
+              onclick="iniciarVisita()">
+        Iniciar visita y registrar venta
+      </button>
+      <button class="btn-sin-venta"
+              onclick="marcarSinVenta()">
+        Marcar sin venta
+      </button>`
+  }
+
+  // — Iniciar visita → ir a venta.html —
+  window.iniciarVisita = async () => {
+    const { data: visita, error } = await supabase
+      .from('visitas')
+      .insert({
+        tienda_id  : tiendaId,
+        vendedor_id: usuario.id,
+        fecha      : fechaHoy,
+        estado     : 'pendiente',
+        corte_id   : null
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error(error)
+      alert('Error al iniciar visita')
+      return
+    }
+    sessionStorage.setItem('visita_id', visita.id)
+    location.href = 'venta.html'
+  }
+
+  // — Marcar sin venta —
+  window.marcarSinVenta = async () => {
+    const notas = prompt(
+      '¿Por qué no hubo venta? (opcional)'
+    )
+    await supabase.from('visitas').insert({
+      tienda_id  : tiendaId,
+      vendedor_id: usuario.id,
+      fecha      : fechaHoy,
+      estado     : 'sin_venta',
+      notas      : notas || null,
+      corte_id   : null
+    })
+    location.href = 'ruta.html'
+  }
+}
+
+iniciar()
+</script>
+
+</body>
+</html>
