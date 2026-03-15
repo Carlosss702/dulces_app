@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width,initial-scale=1">
+  <title>Cobro</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <style>
+    body { background:#f5f3ee; min-height:100vh; }
+    .topbar { display:flex; align-items:center;
+      gap:10px; padding:14px 16px; background:#fff;
+      border-bottom:0.5px solid #eee;
+      position:sticky; top:0; z-index:10; }
+    .btn-back { background:#f5f3ee; color:#555;
+      border:0.5px solid #ddd; border-radius:8px;
+      padding:6px 12px; font-size:13px;
+      cursor:pointer; width:auto; }
+    .topbar-titulo { font-size:15px;
+      font-weight:500; color:#1a1a1a; }
+
+    .seccion { padding:12px 16px; }
+    .card-blanco { background:#fff;
+      border-radius:12px; padding:14px;
+      margin-bottom:10px;
+      border:0.5px solid #eee; }
+    .card-label { font-size:12px; color:#888;
+      font-weight:500; margin-bottom:10px; }
+
+    .resumen-item { display:flex;
+      justify-content:space-between;
+      font-size:13px; padding:4px 0;
+      border-bottom:0.5px solid #f0ede6; }
+    .resumen-item:last-of-type{border-bottom:none}
+    .total-grande { display:flex;
+      justify-content:space-between;
+      font-size:18px; font-weight:600;
+      padding-top:10px; margin-top:6px;
+      border-top:1px solid #ddd; }
+
+    .tipo-grid { display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:8px; margin-bottom:4px; }
+    .tipo-btn { padding:10px 4px;
+      border-radius:10px; text-align:center;
+      border:0.5px solid #ddd; background:#fff;
+      cursor:pointer; font-size:13px;
+      font-weight:500; color:#555;
+      transition:all .15s; }
+    .tipo-btn.active { border:1.5px solid #1D9E75;
+      background:#f0fdf8; color:#1D9E75; }
+
+    .campo { margin-bottom:10px; }
+    .campo label { display:block; font-size:12px;
+      color:#888; margin-bottom:4px; }
+    .campo input, .campo select,
+    .campo textarea {
+      width:100%; box-sizing:border-box; }
+    .campo textarea { height:60px;
+      resize:none; font-size:13px; }
+
+    .cambio-row { display:flex;
+      justify-content:space-between;
+      align-items:center; font-size:13px;
+      padding:8px 0; margin-top:4px;
+      border-top:0.5px solid #eee; }
+    .cambio-ok  { color:#1D9E75;
+      font-size:16px; font-weight:600; }
+    .cambio-neg { color:#A32D2D;
+      font-size:16px; font-weight:600; }
+
+    .btn-confirmar { width:100%; padding:14px;
+      background:#1D9E75; color:#fff; border:none;
+      border-radius:12px; font-size:15px;
+      font-weight:500; cursor:pointer;
+      margin-bottom:8px; }
+    .btn-confirmar:disabled { background:#ccc;
+      cursor:default; }
+    .btn-cancelar { width:100%; padding:11px;
+      background:#fff; color:#888;
+      border:0.5px solid #ddd;
+      border-radius:12px; font-size:14px;
+      cursor:pointer; }
+
+    .exito { text-align:center;
+      padding:2rem 1rem; }
+    .exito-icono { font-size:48px;
+      margin-bottom:1rem; }
+    .exito-titulo { font-size:20px;
+      font-weight:600; color:#1D9E75;
+      margin-bottom:.5rem; }
+    .exito-sub { font-size:14px;
+      color:#888; margin-bottom:1.5rem; }
+    .btn-ruta { width:100%; padding:14px;
+      background:#1D9E75; color:#fff;
+      border:none; border-radius:12px;
+      font-size:15px; font-weight:500;
+      cursor:pointer; }
+  </style>
+</head>
+<body>
+
+<div class="topbar" id="topbar">
+  <button class="btn-back"
+          onclick="history.back()">← Pedido</button>
+  <span class="topbar-titulo"
+        id="titulo">Cobro</span>
+</div>
+
+<div class="seccion" id="contenido">
+
+  <div class="card-blanco">
+    <div class="card-label">Resumen del pedido</div>
+    <div id="resumen-items"></div>
+    <div class="total-grande">
+      <span>Total</span>
+      <span style="color:#1D9E75"
+            id="total-display"></span>
+    </div>
+  </div>
+
+  <div class="card-blanco">
+    <div class="card-label">Forma de pago</div>
+    <div class="tipo-grid">
+      <div class="tipo-btn active"
+           id="t-contado"
+           onclick="setTipo('contado')">
+        Contado</div>
+      <div class="tipo-btn"
+           id="t-credito"
+           onclick="setTipo('credito')">
+        Crédito</div>
+      <div class="tipo-btn"
+           id="t-abono"
+           onclick="setTipo('abono')">
+        Abono</div>
+    </div>
+  </div>
+
+  <div class="card-blanco" id="zona-pago"></div>
+
+  <div class="card-blanco">
+    <div class="campo">
+      <label>Notas (opcional)</label>
+      <textarea id="notas"
+        placeholder="Ej: pide más Pulparindo..."
+      ></textarea>
+    </div>
+  </div>
+
+  <button class="btn-confirmar"
+          id="btn-confirmar"
+          onclick="confirmarVenta()">
+    Confirmar venta
+  </button>
+  <button class="btn-cancelar"
+          onclick="history.back()">
+    Cancelar
+  </button>
+
+</div>
+
+<script type="module">
+import { supabase, getUsuario }
+  from '../js/supabase.js'
+
+let tipo    = 'contado'
+let total   = 0
+let carrito = {}
+let productos = []
+let visitaId, tiendaId, tiendaNombre
+
+async function iniciar() {
+  const usuario = await getUsuario()
+  if (!usuario) {
+    location.href = 'login.html'; return
+  }
+
+  visitaId     = sessionStorage.getItem('visita_id')
+  tiendaId     = sessionStorage.getItem('tienda_id')
+  tiendaNombre = sessionStorage.getItem('tienda_nombre')
+  total        = parseFloat(
+    sessionStorage.getItem('venta_total') || 0)
+  carrito      = JSON.parse(
+    sessionStorage.getItem('venta_carrito') || '{}')
+
+  if (!visitaId || !total) {
+    location.href = 'ruta.html'; return
+  }
+
+  document.getElementById('titulo')
+    .textContent = tiendaNombre || 'Cobro'
+  document.getElementById('total-display')
+    .textContent = `$${total.toFixed(2)}`
+
+  // Cargar nombres de productos del carrito
+  const ids = Object.keys(carrito)
+  const { data } = await supabase
+    .from('productos')
+    .select('id, nombre, precio_unitario')
+    .in('id', ids)
+  productos = data || []
+
+  document.getElementById('resumen-items')
+    .innerHTML = productos.map(p => {
+      const qty = carrito[p.id]
+      const sub = qty *
+        parseFloat(p.precio_unitario)
+      return `
+        <div class="resumen-item">
+          <span>${p.nombre} ×${qty}</span>
+          <span>$${sub.toFixed(2)}</span>
+        </div>`
+    }).join('')
+
+  setTipo('contado')
+}
+
+window.setTipo = t => {
+  tipo = t
+  ;['contado','credito','abono'].forEach(x => {
+    document.getElementById(`t-${x}`)
+      .classList.toggle('active', x === t)
+  })
+  const zona =
+    document.getElementById('zona-pago')
+  const btn  =
+    document.getElementById('btn-confirmar')
+  btn.disabled = false
+
+  if (t === 'contado') {
+    zona.innerHTML = `
+      <div class="campo">
+        <label>Efectivo recibido</label>
+        <input type="number" id="efectivo"
+          placeholder="$0.00" step="0.50"
+          oninput="calcCambio()">
+      </div>
+      <div class="cambio-row">
+        <span style="color:#888">Cambio</span>
+        <span id="cambio-val">—</span>
+      </div>`
+  } else if (t === 'credito') {
+    const limite = new Date()
+    limite.setDate(limite.getDate() + 7)
+    zona.innerHTML = `
+      <div class="campo">
+        <label>Fecha límite de pago</label>
+        <input type="date" id="fecha-limite"
+          value="${limite.toISOString().split('T')[0]}">
+      </div>`
+  } else {
+    zona.innerHTML = `
+      <div class="campo">
+        <label>Monto abonado</label>
+        <input type="number" id="abono-monto"
+          placeholder="$0.00" step="0.50"
+          oninput="calcPendiente()">
+      </div>
+      <div class="cambio-row">
+        <span style="color:#888">
+          Queda pendiente</span>
+        <span id="pendiente-val">
+          $${total.toFixed(2)}</span>
+      </div>`
+  }
+}
+
+window.calcCambio = () => {
+  const ef  = parseFloat(
+    document.getElementById('efectivo').value) || 0
+  const cam = ef - total
+  const el  =
+    document.getElementById('cambio-val')
+  const btn =
+    document.getElementById('btn-confirmar')
+  if (ef === 0) {
+    el.textContent = '—'
+    el.className   = ''
+    btn.disabled   = false
+    return
+  }
+  if (cam < 0) {
+    el.textContent = `-$${Math.abs(cam).toFixed(2)}`
+    el.className   = 'cambio-neg'
+    btn.disabled   = true
+  } else {
+    el.textContent = `$${cam.toFixed(2)}`
+    el.className   = 'cambio-ok'
+    btn.disabled   = false
+  }
+}
+
+window.calcPendiente = () => {
+  const ab   = parseFloat(
+    document.getElementById('abono-monto').value) || 0
+  const pend = total - ab
+  const el   =
+    document.getElementById('pendiente-val')
+  const btn  =
+    document.getElementById('btn-confirmar')
+  el.textContent = `$${Math.max(0,pend).toFixed(2)}`
+  el.className   = pend > 0
+    ? 'cambio-neg' : 'cambio-ok'
+  btn.disabled   = ab <= 0 || ab > total
+}
+
+window.confirmarVenta = async () => {
+  const btn =
+    document.getElementById('btn-confirmar')
+  btn.disabled   = true
+  btn.textContent = 'Guardando...'
+
+  const notas = document.getElementById('notas')
+    .value || null
+
+  // — Datos según tipo de pago —
+  let montoAbonado = total
+  let fechaLimite  = null
+
+  if (tipo === 'credito') {
+    montoAbonado = 0
+    fechaLimite  = document
+      .getElementById('fecha-limite')?.value || null
+  } else if (tipo === 'abono') {
+    montoAbonado = parseFloat(
+      document.getElementById('abono-monto')
+        ?.value) || 0
+  }
+
+  // 1. Insertar venta
+  const { data: venta, error: errVenta } =
+    await supabase.from('ventas').insert({
+      visita_id           : visitaId,
+      total               : total,
+      estado_pago         : tipo,
+      monto_abonado       : montoAbonado,
+      fecha_limite_credito: fechaLimite
+    }).select().single()
+
+  if (errVenta) {
+    console.error(errVenta)
+    alert('Error al guardar la venta')
+    btn.disabled   = false
+    btn.textContent = 'Confirmar venta'
+    return
+  }
+
+  // 2. Insertar detalle de venta
+  const detalles = productos.map(p => ({
+    venta_id       : venta.id,
+    producto_id    : p.id,
+    cantidad       : carrito[p.id],
+    precio_unitario: parseFloat(p.precio_unitario)
+  }))
+  await supabase.from('detalle_venta')
+    .insert(detalles)
+
+  // 3. Actualizar visita a "visitada"
+  await supabase.from('visitas')
+    .update({ estado: 'visitada', notas })
+    .eq('id', visitaId)
+
+  // 4. Actualizar saldo de la tienda
+  // si hay crédito o abono pendiente
+  const pendiente = total - montoAbonado
+  if (pendiente > 0) {
+    const { data: tienda } = await supabase
+      .from('tiendas')
+      .select('saldo_credito')
+      .eq('id', tiendaId)
+      .single()
+    const saldoActual =
+      parseFloat(tienda?.saldo_credito || 0)
+    await supabase.from('tiendas')
+      .update({
+        saldo_credito: saldoActual + pendiente
+      })
+      .eq('id', tiendaId)
+  }
+
+  // 5. Limpiar sessionStorage del carrito
+  sessionStorage.removeItem('venta_carrito')
+  sessionStorage.removeItem('venta_total')
+  sessionStorage.removeItem('visita_id')
+
+  // 6. Mostrar pantalla de éxito
+  document.getElementById('topbar')
+    .style.display = 'none'
+  document.getElementById('contenido')
+    .innerHTML = `
+    <div class="exito">
+      <div class="exito-icono">✓</div>
+      <div class="exito-titulo">
+        Venta registrada</div>
+      <div class="exito-sub">
+        $${total.toFixed(2)} —
+        ${tipo.charAt(0).toUpperCase()+tipo.slice(1)}
+      </div>
+      <button class="btn-ruta"
+              onclick="location.href='ruta.html'">
+        Volver a la ruta
+      </button>
+    </div>`
+}
+
+iniciar()
+</script>
+</body>
+</html>
