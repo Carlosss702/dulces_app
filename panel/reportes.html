@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width,initial-scale=1">
+  <title>Reportes — Dulces</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <style>
+    body { background:#f5f3ee; min-height:100vh }
+    .topbar { display:flex; align-items:center;
+      justify-content:space-between;
+      padding:14px 16px; background:#534AB7;
+      color:#fff }
+    .topbar-titulo { font-size:16px;
+      font-weight:500 }
+    .btn-salir { background:rgba(255,255,255,.15);
+      color:#fff; border:none; border-radius:8px;
+      padding:6px 12px; font-size:12px;
+      cursor:pointer; width:auto }
+    .nav { display:flex; background:#fff;
+      border-bottom:0.5px solid #eee;
+      overflow-x:auto }
+    .nav::-webkit-scrollbar { display:none }
+    .nav-item { padding:12px 16px; font-size:13px;
+      font-weight:500; color:#888; cursor:pointer;
+      white-space:nowrap;
+      border-bottom:2px solid transparent;
+      transition:all .15s }
+    .nav-item.active { color:#534AB7;
+      border-bottom-color:#534AB7 }
+    .filtros { background:#fff; padding:12px 16px;
+      border-bottom:0.5px solid #eee;
+      display:flex; gap:8px; flex-wrap:wrap;
+      align-items:flex-end }
+    .filtro { display:flex; flex-direction:column;
+      gap:4px }
+    .filtro label { font-size:11px; color:#888;
+      font-weight:500 }
+    .filtro input,
+    .filtro select { padding:7px 10px;
+      font-size:13px; border:0.5px solid #ddd;
+      border-radius:8px; background:#fff;
+      color:#1a1a1a; width:auto }
+    .btn-filtrar { padding:8px 16px;
+      background:#534AB7; color:#fff;
+      border:none; border-radius:8px;
+      font-size:13px; font-weight:500;
+      cursor:pointer; width:auto;
+      align-self:flex-end }
+    .tabs-vista { display:flex; gap:6px;
+      padding:12px 16px }
+    .tab-btn { flex:1; padding:8px;
+      text-align:center; font-size:13px;
+      font-weight:500; border-radius:8px;
+      border:0.5px solid #ddd; background:#fff;
+      cursor:pointer; color:#888;
+      transition:all .15s }
+    .tab-btn.active { background:#534AB7;
+      color:#fff; border-color:#534AB7 }
+    .seccion { padding:0 16px 16px }
+    .card-blanco { background:#fff;
+      border-radius:12px; padding:14px;
+      margin-bottom:8px;
+      border:0.5px solid #eee }
+    .metrics { display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:8px; margin-bottom:12px }
+    .metric { background:#f5f3ee;
+      border-radius:10px; padding:12px;
+      text-align:center }
+    .metric-num { font-size:18px;
+      font-weight:600; color:#1a1a1a }
+    .metric-label { font-size:11px;
+      color:#888; margin-top:3px }
+    .tabla { width:100%;
+      border-collapse:collapse;
+      font-size:13px }
+    .tabla th { text-align:left; color:#888;
+      font-weight:500; font-size:11px;
+      text-transform:uppercase; padding:6px 0;
+      border-bottom:0.5px solid #eee }
+    .tabla td { padding:8px 0;
+      border-bottom:0.5px solid #f0ede6;
+      color:#1a1a1a }
+    .tabla tr:last-child td {
+      border-bottom:none }
+    .tabla td:last-child,
+    .tabla th:last-child { text-align:right }
+    .bar-wrap { background:#f0ede6;
+      border-radius:4px; height:6px;
+      margin-top:4px; overflow:hidden }
+    .bar-fill { height:6px; border-radius:4px;
+      background:#534AB7;
+      transition:width .4s }
+    .badge-pago { font-size:11px; padding:2px 7px;
+      border-radius:20px; font-weight:500 }
+    .bp-contado { background:#E1F5EE;
+      color:#085041 }
+    .bp-credito { background:#FAEEDA;
+      color:#633806 }
+    .bp-abono   { background:#E6F1FB;
+      color:#0C447C }
+    .empty { text-align:center; padding:2rem;
+      color:#bbb; font-size:13px }
+    .loading { text-align:center; padding:2rem;
+      color:#aaa; font-size:14px }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-titulo">Reportes</div>
+  <button class="btn-salir"
+          onclick="cerrarSesion()">Salir</button>
+</div>
+
+<div class="nav">
+  <div class="nav-item"
+    onclick="location.href='dashboard.html'">
+    Dashboard</div>
+  <div class="nav-item active">Reportes</div>
+  <div class="nav-item"
+    onclick="location.href='cortes.html'">
+    Cortes</div>
+  <div class="nav-item"
+    onclick="location.href='bodega.html'">
+    Bodega</div>
+  <div class="nav-item"
+    onclick="location.href='vendedores.html'">
+    Vendedores</div>
+</div>
+
+<div class="filtros">
+  <div class="filtro">
+    <label>Desde</label>
+    <input type="date" id="fecha-desde">
+  </div>
+  <div class="filtro">
+    <label>Hasta</label>
+    <input type="date" id="fecha-hasta">
+  </div>
+  <div class="filtro">
+    <label>Vendedor</label>
+    <select id="filtro-vendedor">
+      <option value="">Todos</option>
+    </select>
+  </div>
+  <button class="btn-filtrar"
+          onclick="cargarReporte()">
+    Consultar
+  </button>
+</div>
+
+<div class="tabs-vista">
+  <button class="tab-btn active"
+          id="tab-resumen"
+          onclick="setVista('resumen')">
+    Resumen</button>
+  <button class="tab-btn"
+          id="tab-vendedor"
+          onclick="setVista('vendedor')">
+    Por vendedor</button>
+  <button class="tab-btn"
+          id="tab-producto"
+          onclick="setVista('producto')">
+    Por producto</button>
+</div>
+
+<div class="seccion" id="contenido">
+  <div class="loading">
+    Selecciona un rango de fechas y consulta.
+  </div>
+</div>
+
+<script type="module">
+import { supabase, getUsuario,
+         cerrarSesion as logout }
+  from '../js/supabase.js'
+
+let datosReporte = []
+let vistaActiva  = 'resumen'
+let vendedores   = []
+
+async function iniciar() {
+  const usuario = await getUsuario()
+  if (!usuario) {
+    location.href = '../paginas/login.html'
+    return
+  }
+  if (![ 'dueno','admin' ]
+      .includes(usuario.rol)) {
+    location.href = '../paginas/ruta.html'
+    return
+  }
+
+  // Fechas por defecto: semana actual
+  const hoy   = new Date()
+  const lunes = new Date(hoy)
+  lunes.setDate(hoy.getDate() -
+    ((hoy.getDay() || 7) - 1))
+  document.getElementById('fecha-desde')
+    .value = lunes.toISOString().split('T')[0]
+  document.getElementById('fecha-hasta')
+    .value = hoy.toISOString().split('T')[0]
+
+  // Cargar vendedores para el filtro
+  const { data } = await supabase
+    .from('usuarios')
+    .select('id, nombre')
+    .eq('rol', 'vendedor')
+    .eq('activo', true)
+  vendedores = data || []
+  const sel =
+    document.getElementById('filtro-vendedor')
+  vendedores.forEach(v => {
+    const opt = document.createElement('option')
+    opt.value       = v.id
+    opt.textContent = v.nombre
+    sel.appendChild(opt)
+  })
+
+  cargarReporte()
+}
+
+window.cargarReporte = async () => {
+  const desde    =
+    document.getElementById('fecha-desde').value
+  const hasta    =
+    document.getElementById('fecha-hasta').value
+  const vendedor =
+    document.getElementById('filtro-vendedor').value
+
+  document.getElementById('contenido')
+    .innerHTML =
+      '<div class="loading">Cargando...</div>'
+
+  let query = supabase
+    .from('visitas')
+    .select(`
+      id, fecha, vendedor_id,
+      usuarios!vendedor_id ( nombre ),
+      ventas (
+        id, total, estado_pago,
+        monto_abonado,
+        detalle_venta (
+          cantidad, precio_unitario,
+          productos ( nombre )
+        )
+      )
+    `)
+    .gte('fecha', desde)
+    .lte('fecha', hasta)
+    .eq('estado', 'visitada')
+    .order('fecha', { ascending: false })
+
+  if (vendedor)
+    query = query.eq('vendedor_id', vendedor)
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error(error)
+    document.getElementById('contenido')
+      .innerHTML =
+      '<div class="empty">Error al cargar</div>'
+    return
+  }
+
+  datosReporte = data || []
+  renderVista()
+}
+
+window.setVista = v => {
+  vistaActiva = v
+  ;['resumen','vendedor','producto']
+    .forEach(x => {
+      document.getElementById(`tab-${x}`)
+        .classList.toggle('active', x === v)
+    })
+  renderVista()
+}
+
+function renderVista() {
+  if      (vistaActiva === 'resumen')
+    renderResumen()
+  else if (vistaActiva === 'vendedor')
+    renderPorVendedor()
+  else
+    renderPorProducto()
+}
+
+function getVenta(v) {
+  return Array.isArray(v.ventas)
+    ? v.ventas[0] : v.ventas
+}
+
+function renderResumen() {
+  if (!datosReporte.length) {
+    document.getElementById('contenido')
+      .innerHTML =
+      '<div class="empty">Sin ventas en ese período</div>'
+    return
+  }
+
+  let totalV=0, totalC=0,
+      totalCred=0, visitas=0
+  datosReporte.forEach(v => {
+    const venta = getVenta(v)
+    if (!venta) return
+    visitas++
+    totalV    += parseFloat(venta.total || 0)
+    totalC    += parseFloat(
+      venta.monto_abonado || 0)
+    if (venta.estado_pago === 'credito')
+      totalCred += parseFloat(venta.total || 0)
+  })
+
+  const rows = datosReporte
+    .filter(v => getVenta(v))
+    .map(v => {
+      const venta  = getVenta(v)
+      const fecha  = new Date(
+        v.fecha + 'T12:00:00')
+        .toLocaleDateString('es-MX',{
+          day:'numeric', month:'short'
+        })
+      const vend   = Array.isArray(v.usuarios)
+        ? v.usuarios[0]?.nombre
+        : v.usuarios?.nombre || '—'
+      const badgeMap = {
+        contado:['bp-contado','Contado'],
+        credito:['bp-credito','Crédito'],
+        abono  :['bp-abono',  'Abono']
+      }
+      const [bc,bt] =
+        badgeMap[venta.estado_pago]||
+        ['bp-contado','—']
+      return `<tr>
+        <td>${fecha}</td>
+        <td>${vend}</td>
+        <td>
+          <span class="badge-pago ${bc}">
+            ${bt}</span></td>
+        <td>$${parseFloat(venta.total)
+          .toFixed(2)}</td>
+      </tr>`
+    }).join('')
+
+  document.getElementById('contenido')
+    .innerHTML = `
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-num">
+        $${totalV.toFixed(2)}</div>
+      <div class="metric-label">
+        Total vendido</div>
+    </div>
+    <div class="metric">
+      <div class="metric-num"
+           style="color:#1D9E75">
+        $${totalC.toFixed(2)}</div>
+      <div class="metric-label">
+        Cobrado</div>
+    </div>
+    <div class="metric">
+      <div class="metric-num"
+           style="color:#BA7517">
+        $${totalCred.toFixed(2)}</div>
+      <div class="metric-label">
+        A crédito</div>
+    </div>
+  </div>
+  <div class="card-blanco">
+    <table class="tabla">
+      <thead><tr>
+        <th>Fecha</th>
+        <th>Vendedor</th>
+        <th>Pago</th>
+        <th>Total</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`
+}
+
+function renderPorVendedor() {
+  const mapa = {}
+  datosReporte.forEach(v => {
+    const venta = getVenta(v)
+    if (!venta) return
+    const nombre = Array.isArray(v.usuarios)
+      ? v.usuarios[0]?.nombre
+      : v.usuarios?.nombre || 'Sin nombre'
+    if (!mapa[nombre])
+      mapa[nombre] = { vendido:0, visitas:0 }
+    mapa[nombre].vendido +=
+      parseFloat(venta.total || 0)
+    mapa[nombre].visitas++
+  })
+
+  const items = Object.entries(mapa)
+    .sort((a,b) => b[1].vendido - a[1].vendido)
+  const maxVendido = items[0]?.[1]?.vendido || 1
+
+  if (!items.length) {
+    document.getElementById('contenido')
+      .innerHTML =
+      '<div class="empty">Sin datos</div>'
+    return
+  }
+
+  document.getElementById('contenido')
+    .innerHTML = `
+  <div class="card-blanco">
+    <table class="tabla">
+      <thead><tr>
+        <th>Vendedor</th>
+        <th>Visitas</th>
+        <th>Total vendido</th>
+      </tr></thead>
+      <tbody>
+      ${items.map(([nombre, d]) => `
+        <tr>
+          <td>
+            ${nombre}
+            <div class="bar-wrap">
+              <div class="bar-fill" style="width:
+                ${(d.vendido/maxVendido*100).toFixed(0)}%">
+              </div>
+            </div>
+          </td>
+          <td>${d.visitas}</td>
+          <td>$${d.vendido.toFixed(2)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`
+}
+
+function renderPorProducto() {
+  const mapa = {}
+  datosReporte.forEach(v => {
+    const venta = getVenta(v)
+    if (!venta) return
+    const detalles = Array.isArray(venta.detalle_venta)
+      ? venta.detalle_venta : []
+    detalles.forEach(d => {
+      const nombre = Array.isArray(d.productos)
+        ? d.productos[0]?.nombre
+        : d.productos?.nombre || '—'
+      if (!mapa[nombre])
+        mapa[nombre] = { cantidad:0, total:0 }
+      mapa[nombre].cantidad += d.cantidad
+      mapa[nombre].total    +=
+        d.cantidad * parseFloat(d.precio_unitario)
+    })
+  })
+
+  const items = Object.entries(mapa)
+    .sort((a,b) => b[1].total - a[1].total)
+  const maxTotal = items[0]?.[1]?.total || 1
+
+  if (!items.length) {
+    document.getElementById('contenido')
+      .innerHTML =
+      '<div class="empty">Sin datos</div>'
+    return
+  }
+
+  document.getElementById('contenido')
+    .innerHTML = `
+  <div class="card-blanco">
+    <table class="tabla">
+      <thead><tr>
+        <th>Producto</th>
+        <th>Piezas</th>
+        <th>Total</th>
+      </tr></thead>
+      <tbody>
+      ${items.map(([nombre, d]) => `
+        <tr>
+          <td>
+            ${nombre}
+            <div class="bar-wrap">
+              <div class="bar-fill" style="width:
+                ${(d.total/maxTotal*100).toFixed(0)}%">
+              </div>
+            </div>
+          </td>
+          <td>${d.cantidad}</td>
+          <td>$${d.total.toFixed(2)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`
+}
+
+iniciar()
+window.cerrarSesion = logout
+</script>
+
+</body>
+</html>

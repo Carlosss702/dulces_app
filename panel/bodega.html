@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bodega — Dulces</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <style>
+    body{background:#f5f3ee;min-height:100vh}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#534AB7;color:#fff}
+    .topbar-titulo{font-size:16px;font-weight:500}
+    .btn-salir{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;width:auto}
+    .nav{display:flex;background:#fff;border-bottom:0.5px solid #eee;overflow-x:auto}
+    .nav::-webkit-scrollbar{display:none}
+    .nav-item{padding:12px 16px;font-size:13px;font-weight:500;color:#888;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s}
+    .nav-item.active{color:#534AB7;border-bottom-color:#534AB7}
+    .tabs{display:flex;gap:6px;padding:12px 16px 0;background:#fff;border-bottom:0.5px solid #eee}
+    .tab-btn{padding:8px 14px;font-size:13px;font-weight:500;border-radius:8px;border:0.5px solid #ddd;background:#fff;cursor:pointer;color:#888;transition:all .15s}
+    .tab-btn.active{background:#534AB7;color:#fff;border-color:#534AB7}
+    .seccion{padding:12px 16px}
+    .card-b{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;border:0.5px solid #eee}
+    .card-label{font-size:12px;color:#888;font-weight:500;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
+    .campo{margin-bottom:10px}
+    .campo label{display:block;font-size:12px;color:#888;margin-bottom:4px}
+    .campo input,.campo select,.campo textarea{width:100%;box-sizing:border-box}
+    .campo textarea{height:60px;resize:none;font-size:13px}
+
+    /* Stock */
+    .stock-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid #f0ede6}
+    .stock-row:last-child{border-bottom:none}
+    .stock-nombre{font-size:13px;font-weight:500;color:#1a1a1a}
+    .stock-cat{font-size:11px;color:#aaa;margin-top:2px}
+    .stock-precio{font-size:11px;color:#888;margin-top:2px}
+    .stock-badge{font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px}
+    .sb-ok{background:#E1F5EE;color:#085041}
+    .sb-low{background:#FAEEDA;color:#633806}
+    .sb-out{background:#FCEBEB;color:#791F1F}
+    .alerta-min{background:#FAEEDA;color:#633806;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:10px}
+
+    /* Despacho */
+    .vendedor-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .vend-btn{padding:8px 14px;border-radius:8px;border:0.5px solid #ddd;background:#fff;font-size:13px;font-weight:500;color:#888;cursor:pointer;transition:all .15s}
+    .vend-btn.active{background:#EEEDFE;border-color:#534AB7;color:#3C3489}
+    .prod-desp-row{display:grid;grid-template-columns:1fr 100px 90px;gap:8px;align-items:center;padding:8px 0;border-bottom:0.5px solid #f0ede6;font-size:13px}
+    .prod-desp-row:last-child{border-bottom:none}
+    .prod-desp-row.hdr{font-size:10px;color:#888;font-weight:500;padding-bottom:6px}
+    .num-in{width:100%;box-sizing:border-box;text-align:center;padding:6px 4px;font-size:13px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f9;color:#1a1a1a}
+    .resumen-desp{background:#EEEDFE;border-radius:10px;padding:12px 14px;margin:10px 0;display:flex;justify-content:space-between;align-items:center}
+    .rd-label{font-size:13px;color:#3C3489;font-weight:500}
+    .rd-sub{font-size:11px;color:#534AB7;margin-top:2px}
+    .rd-num{font-size:20px;font-weight:600;color:#3C3489}
+
+    /* Historial despachos */
+    .desp-item{padding:10px 0;border-bottom:0.5px solid #f0ede6}
+    .desp-item:last-child{border-bottom:none}
+    .desp-folio{font-size:13px;font-weight:500;color:#1a1a1a}
+    .desp-info{font-size:11px;color:#888;margin-top:2px}
+    .desp-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+    .chip{font-size:11px;background:#f0ede6;border-radius:6px;padding:2px 8px;color:#555}
+    .chip.green{background:#E1F5EE;color:#085041}
+    .badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}
+    .b-pend{background:#FAEEDA;color:#633806}
+    .b-conf{background:#E1F5EE;color:#085041}
+    .b-canc{background:#f0ede6;color:#888}
+
+    /* Entradas */
+    .tipo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+    .tipo-card{background:#fff;border:0.5px solid #ddd;border-radius:10px;padding:10px;cursor:pointer;text-align:center;transition:all .15s}
+    .tipo-card:hover{border-color:#888}
+    .tipo-card.active{border:1.5px solid #534AB7;background:#EEEDFE}
+    .tipo-titulo{font-size:13px;font-weight:500;color:#1a1a1a}
+    .tipo-desc{font-size:11px;color:#888;margin-top:2px}
+    .tipo-card.active .tipo-titulo{color:#3C3489}
+
+    /* Entradas historial */
+    .ent-item{padding:10px 0;border-bottom:0.5px solid #f0ede6}
+    .ent-item:last-child{border-bottom:none}
+    .ent-folio{font-size:13px;font-weight:500;color:#1a1a1a}
+    .ent-info{font-size:11px;color:#888;margin-top:2px}
+
+    .btn-primary{width:100%;padding:13px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px}
+    .btn-green{width:100%;padding:13px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px}
+    .btn-sec{width:100%;padding:11px;background:#fff;color:#888;border:0.5px solid #ddd;border-radius:10px;font-size:14px;cursor:pointer}
+    .empty{text-align:center;padding:2rem;color:#bbb;font-size:13px}
+    .loading{text-align:center;padding:2rem;color:#aaa;font-size:14px}
+    .vista{display:none}
+    .vista.active{display:block}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-titulo">Bodega</div>
+  <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+</div>
+
+<div class="nav">
+  <div class="nav-item" onclick="location.href='dashboard.html'">Dashboard</div>
+  <div class="nav-item" onclick="location.href='reportes.html'">Reportes</div>
+  <div class="nav-item" onclick="location.href='cortes.html'">Cortes</div>
+  <div class="nav-item active">Bodega</div>
+  <div class="nav-item" onclick="location.href='vendedores.html'">Vendedores</div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tab-stock"    onclick="setTab('stock')">Stock</button>
+  <button class="tab-btn"        id="tab-despacho" onclick="setTab('despacho')">Nuevo despacho</button>
+  <button class="tab-btn"        id="tab-entrada"  onclick="setTab('entrada')">Entrada mercancía</button>
+  <button class="tab-btn"        id="tab-historial" onclick="setTab('historial')">Historial</button>
+</div>
+
+<!-- STOCK -->
+<div class="vista active seccion" id="vista-stock">
+  <div class="card-b" id="lista-stock">
+    <div class="loading">Cargando stock...</div>
+  </div>
+</div>
+
+<!-- NUEVO DESPACHO -->
+<div class="vista seccion" id="vista-despacho">
+  <div class="card-b">
+    <div class="card-label">Vendedor</div>
+    <div class="vendedor-grid" id="vend-grid"></div>
+  </div>
+
+  <div class="card-b">
+    <div class="card-label">Productos a despachar</div>
+    <div class="prod-desp-row hdr">
+      <span>Producto</span>
+      <span style="text-align:center">En bodega</span>
+      <span style="text-align:center">Cantidad</span>
+    </div>
+    <div id="prod-despacho">
+      <div class="empty">Selecciona un vendedor</div>
+    </div>
+  </div>
+
+  <div class="resumen-desp" id="resumen-desp" style="display:none">
+    <div>
+      <div class="rd-label" id="rd-label">0 productos</div>
+      <div class="rd-sub"   id="rd-sub">Selecciona cantidades</div>
+    </div>
+    <div class="rd-num" id="rd-num">$0.00</div>
+  </div>
+
+  <div class="campo">
+    <label>Notas (opcional)</label>
+    <textarea id="desp-notas" placeholder="Observaciones del despacho..."></textarea>
+  </div>
+
+  <button class="btn-primary" id="btn-despachar" disabled onclick="guardarDespacho()">
+    Generar despacho
+  </button>
+  <button class="btn-sec" onclick="setTab('historial')">Ver historial</button>
+</div>
+
+<!-- ENTRADA MERCANCÍA -->
+<div class="vista seccion" id="vista-entrada">
+  <div class="card-b">
+    <div class="card-label">Tipo de entrada</div>
+    <div class="tipo-grid">
+      <div class="tipo-card active" id="tipo-compra" onclick="setTipo('compra')">
+        <div class="tipo-titulo">Compra a proveedor</div>
+        <div class="tipo-desc">Mercancía nueva que llega</div>
+      </div>
+      <div class="tipo-card" id="tipo-ajuste" onclick="setTipo('ajuste')">
+        <div class="tipo-titulo">Ajuste de inventario</div>
+        <div class="tipo-desc">Corrección por conteo físico</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-b" id="campos-entrada">
+    <!-- Se llena dinámicamente -->
+  </div>
+
+  <div class="card-b">
+    <div class="card-label">Cantidades que ingresan</div>
+    <div id="prod-entrada">
+      <div class="loading">Cargando...</div>
+    </div>
+  </div>
+
+  <div class="campo">
+    <label>Notas (opcional)</label>
+    <textarea id="ent-notas" placeholder="Observaciones..."></textarea>
+  </div>
+
+  <button class="btn-green" onclick="guardarEntrada()">Registrar entrada</button>
+</div>
+
+<!-- HISTORIAL -->
+<div class="vista seccion" id="vista-historial">
+  <div class="card-b">
+    <div class="card-label">Despachos recientes</div>
+    <div id="lista-despachos"><div class="loading">Cargando...</div></div>
+  </div>
+  <div class="card-b" style="margin-top:10px">
+    <div class="card-label">Entradas recientes</div>
+    <div id="lista-entradas"><div class="loading">Cargando...</div></div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, getUsuario, cerrarSesion as logout }
+  from '../js/supabase.js'
+
+let productos    = []
+let stockMap     = {}   // producto_id → cantidad_disponible
+let vendedores   = []
+let vendedorDesp = null
+let cantDespacho = {}
+let tipoEntrada  = 'compra'
+let cantEntrada  = {}
+
+async function iniciar() {
+  const usuario = await getUsuario()
+  if (!usuario) { location.href = '../paginas/login.html'; return }
+  if (!['dueno','admin'].includes(usuario.rol)) { location.href = '../paginas/ruta.html'; return }
+
+  // Cargar productos y stock
+  const { data: prods } = await supabase
+    .from('productos')
+    .select('id,nombre,categoria,precio_unitario')
+    .eq('activo', true)
+    .order('categoria')
+  productos = prods || []
+
+  const { data: stock } = await supabase
+    .from('stock_bodega')
+    .select('producto_id, cantidad_disponible, cantidad_minima')
+  ;(stock || []).forEach(s => {
+    stockMap[s.producto_id] = s
+  })
+
+  // Cargar vendedores
+  const { data: vends } = await supabase
+    .from('usuarios')
+    .select('id, nombre')
+    .eq('rol', 'vendedor')
+    .eq('activo', true)
+  vendedores = vends || []
+
+  // Inicializar cantidades
+  productos.forEach(p => {
+    cantDespacho[p.id] = 0
+    cantEntrada[p.id]  = 0
+  })
+
+  renderStock()
+  renderVendedores()
+  renderProdEntrada()
+  renderCamposEntrada()
+}
+
+// ── STOCK ──────────────────────────────────────
+function renderStock() {
+  const alertas = productos.filter(p => {
+    const s = stockMap[p.id]
+    return s && s.cantidad_disponible <= s.cantidad_minima
+  })
+
+  const lista = document.getElementById('lista-stock')
+  let html = ''
+
+  if (alertas.length > 0) {
+    html += `<div class="alerta-min">
+      ${alertas.length} producto(s) por debajo del mínimo: 
+      ${alertas.map(p => p.nombre).join(', ')}
+    </div>`
+  }
+
+  html += productos.map(p => {
+    const s    = stockMap[p.id]
+    const cant = s ? s.cantidad_disponible : 0
+    const min  = s ? s.cantidad_minima     : 0
+    let cls = 'sb-ok'
+    if (cant <= 0)   cls = 'sb-out'
+    else if (cant <= min) cls = 'sb-low'
+    return `
+    <div class="stock-row">
+      <div>
+        <div class="stock-nombre">${p.nombre}</div>
+        <div class="stock-cat">${p.categoria || '—'}</div>
+        <div class="stock-precio">$${parseFloat(p.precio_unitario).toFixed(2)} c/u</div>
+      </div>
+      <span class="stock-badge ${cls}">
+        ${cant.toLocaleString()} pzas
+      </span>
+    </div>`
+  }).join('')
+
+  lista.innerHTML = html || '<div class="empty">Sin productos</div>'
+}
+
+// ── DESPACHO ───────────────────────────────────
+function renderVendedores() {
+  document.getElementById('vend-grid').innerHTML =
+    vendedores.map(v => `
+    <div class="vend-btn ${vendedorDesp?.id === v.id ? 'active' : ''}"
+         onclick="selVendedor('${v.id}','${v.nombre}')">
+      ${v.nombre}
+    </div>`).join('')
+}
+
+window.selVendedor = (id, nombre) => {
+  vendedorDesp = { id, nombre }
+  renderVendedores()
+  renderProdDespacho()
+}
+
+function renderProdDespacho() {
+  if (!vendedorDesp) return
+  document.getElementById('prod-despacho').innerHTML =
+    productos.map(p => {
+      const stockDisp = stockMap[p.id]?.cantidad_disponible || 0
+      const cant      = cantDespacho[p.id] || 0
+      return `
+      <div class="prod-desp-row">
+        <div>
+          <div style="font-weight:500;font-size:13px">${p.nombre}</div>
+          <div style="font-size:11px;color:#aaa">$${parseFloat(p.precio_unitario).toFixed(2)} c/u</div>
+        </div>
+        <div style="text-align:center">
+          <span class="stock-badge ${stockDisp > 50 ? 'sb-ok' : stockDisp > 0 ? 'sb-low' : 'sb-out'}" style="font-size:11px">
+            ${stockDisp}
+          </span>
+        </div>
+        <input class="num-in" type="number" min="0" max="${stockDisp}"
+          value="${cant}"
+          oninput="updDespacho('${p.id}', this.value, ${stockDisp})">
+      </div>`
+    }).join('')
+  recalcDespacho()
+}
+
+window.updDespacho = (id, val, maxStock) => {
+  cantDespacho[id] = Math.max(0, Math.min(maxStock, parseInt(val) || 0))
+  recalcDespacho()
+}
+
+function recalcDespacho() {
+  let totalPzas = 0, totalVal = 0
+  productos.forEach(p => {
+    const c = cantDespacho[p.id] || 0
+    totalPzas += c
+    totalVal  += c * parseFloat(p.precio_unitario)
+  })
+  const resumen = document.getElementById('resumen-desp')
+  const btn     = document.getElementById('btn-despachar')
+  if (totalPzas > 0) {
+    resumen.style.display = 'flex'
+    document.getElementById('rd-label').textContent =
+      `${totalPzas} piezas para ${vendedorDesp?.nombre || '—'}`
+    document.getElementById('rd-sub').textContent =
+      'Stock suficiente para el despacho'
+    document.getElementById('rd-num').textContent =
+      `$${totalVal.toFixed(2)}`
+    btn.disabled = false
+  } else {
+    resumen.style.display = 'none'
+    btn.disabled = true
+  }
+}
+
+window.guardarDespacho = async () => {
+  if (!vendedorDesp) return
+  const btn = document.getElementById('btn-despachar')
+  btn.disabled    = true
+  btn.textContent = 'Guardando...'
+
+  const notas   = document.getElementById('desp-notas').value || null
+  const usuario = await getUsuario()
+  const ts      = Date.now().toString().slice(-5)
+  const folio   = `DSP-${new Date().getFullYear()}-${ts}`
+
+  // Crear el despacho
+  const { data: desp, error } = await supabase
+    .from('despachos')
+    .insert({
+      folio,
+      vendedor_id: vendedorDesp.id,
+      admin_id   : usuario.id,
+      estado     : 'confirmado',
+      notas,
+      confirmado_en: new Date().toISOString()
+    })
+    .select()
+    .single()
+
+  if (error) {
+    alert('Error al crear despacho: ' + error.message)
+    btn.disabled    = false
+    btn.textContent = 'Generar despacho'
+    return
+  }
+
+  // Insertar detalle y actualizar stock
+  const items = productos.filter(p => (cantDespacho[p.id] || 0) > 0)
+  const detalle = items.map(p => ({
+    despacho_id        : desp.id,
+    producto_id        : p.id,
+    cantidad_despachada: cantDespacho[p.id],
+    cantidad_confirmada: cantDespacho[p.id]
+  }))
+  await supabase.from('detalle_despacho').insert(detalle)
+
+  // Descontar del stock de bodega
+  for (const p of items) {
+    const actual = stockMap[p.id]?.cantidad_disponible || 0
+    const nuevo  = Math.max(0, actual - cantDespacho[p.id])
+    await supabase
+      .from('stock_bodega')
+      .update({ cantidad_disponible: nuevo, actualizado_en: new Date().toISOString() })
+      .eq('producto_id', p.id)
+    if (stockMap[p.id]) stockMap[p.id].cantidad_disponible = nuevo
+    cantDespacho[p.id] = 0
+  }
+
+  renderStock()
+  vendedorDesp = null
+  renderVendedores()
+  document.getElementById('prod-despacho').innerHTML =
+    '<div class="empty">Selecciona un vendedor</div>'
+  document.getElementById('resumen-desp').style.display = 'none'
+  document.getElementById('desp-notas').value = ''
+  btn.textContent = 'Generar despacho'
+  btn.disabled    = true
+
+  alert(`Despacho ${folio} generado y confirmado`)
+  setTab('historial')
+}
+
+// ── ENTRADA MERCANCÍA ─────────────────────────
+window.setTipo = t => {
+  tipoEntrada = t
+  ;['compra','ajuste'].forEach(x => {
+    document.getElementById(`tipo-${x}`)
+      .classList.toggle('active', x === t)
+  })
+  renderCamposEntrada()
+}
+
+function renderCamposEntrada() {
+  const box = document.getElementById('campos-entrada')
+  if (tipoEntrada === 'compra') {
+    box.innerHTML = `
+    <div class="card-label">Datos de la compra</div>
+    <div class="campo">
+      <label>Proveedor</label>
+      <input type="text" id="ent-proveedor" placeholder="Nombre del proveedor">
+    </div>
+    <div class="campo">
+      <label>Número de factura / remisión</label>
+      <input type="text" id="ent-factura" placeholder="FAC-2025-001">
+    </div>
+    <div class="campo">
+      <label>Fecha de entrada</label>
+      <input type="date" id="ent-fecha" value="${new Date().toISOString().split('T')[0]}">
+    </div>`
+  } else {
+    box.innerHTML = `
+    <div class="card-label">Datos del ajuste</div>
+    <div class="campo">
+      <label>Motivo del ajuste</label>
+      <select id="ent-motivo">
+        <option>Conteo físico</option>
+        <option>Producto dañado</option>
+        <option>Error de registro previo</option>
+      </select>
+    </div>
+    <div style="background:#FAEEDA;color:#633806;border-radius:8px;padding:8px 12px;font-size:12px;margin-top:4px">
+      Los ajustes pueden ser negativos — captura cantidades negativas si el conteo encontró menos de lo registrado.
+    </div>`
+    // Permitir negativos en ajuste
+    document.querySelectorAll('.num-in-entrada').forEach(el => {
+      el.min = tipoEntrada === 'ajuste' ? '-9999' : '0'
+    })
+  }
+}
+
+function renderProdEntrada() {
+  document.getElementById('prod-entrada').innerHTML =
+    productos.map(p => {
+      const stockActual = stockMap[p.id]?.cantidad_disponible || 0
+      const cant        = cantEntrada[p.id] || 0
+      const nuevoStock  = stockActual + cant
+      return `
+      <div class="prod-desp-row">
+        <div>
+          <div style="font-weight:500;font-size:13px">${p.nombre}</div>
+          <div style="font-size:11px;color:#aaa">Stock actual: ${stockActual.toLocaleString()}</div>
+        </div>
+        <div style="text-align:center;font-size:12px;font-weight:500;
+          color:${cant !== 0 ? (cant > 0 ? '#1D9E75' : '#A32D2D') : '#aaa'}">
+          ${cant !== 0 ? (cant > 0 ? `+${cant} → ${nuevoStock}` : `${cant} → ${nuevoStock}`) : '—'}
+        </div>
+        <input class="num-in num-in-entrada" type="number"
+          min="${tipoEntrada === 'ajuste' ? -stockActual : 0}"
+          value="${cant || ''}" placeholder="0"
+          oninput="updEntrada('${p.id}', this.value, ${stockActual})">
+      </div>`
+    }).join('')
+}
+
+window.updEntrada = (id, val, stockActual) => {
+  const min = tipoEntrada === 'ajuste' ? -stockActual : 0
+  cantEntrada[id] = Math.max(min, parseInt(val) || 0)
+  renderProdEntrada()
+}
+
+window.guardarEntrada = async () => {
+  const items = productos.filter(p => (cantEntrada[p.id] || 0) !== 0)
+  if (!items.length) { alert('Agrega al menos un producto'); return }
+
+  const usuario    = await getUsuario()
+  const ts         = Date.now().toString().slice(-5)
+  const folio      = `ENT-${new Date().getFullYear()}-${ts}`
+  const proveedor  = document.getElementById('ent-proveedor')?.value || null
+  const factura    = document.getElementById('ent-factura')?.value   || null
+  const notas      = document.getElementById('ent-notas').value      || null
+
+  // Crear entrada
+  const { data: entrada, error } = await supabase
+    .from('entradas_bodega')
+    .insert({
+      folio,
+      tipo        : tipoEntrada,
+      proveedor,
+      num_factura : factura,
+      notas,
+      aprobado_por: usuario.id
+    })
+    .select()
+    .single()
+
+  if (error) { alert('Error: ' + error.message); return }
+
+  // Insertar detalle y actualizar stock
+  for (const p of items) {
+    const anterior = stockMap[p.id]?.cantidad_disponible || 0
+    const nuevo    = Math.max(0, anterior + cantEntrada[p.id])
+
+    await supabase.from('detalle_entrada_bodega').insert({
+      entrada_id    : entrada.id,
+      producto_id   : p.id,
+      cantidad      : cantEntrada[p.id],
+      stock_anterior: anterior,
+      stock_nuevo   : nuevo
+    })
+
+    await supabase
+      .from('stock_bodega')
+      .update({ cantidad_disponible: nuevo, actualizado_en: new Date().toISOString() })
+      .eq('producto_id', p.id)
+
+    if (stockMap[p.id]) stockMap[p.id].cantidad_disponible = nuevo
+    cantEntrada[p.id] = 0
+  }
+
+  renderStock()
+  renderProdEntrada()
+  document.getElementById('ent-notas').value = ''
+  alert(`Entrada ${folio} registrada correctamente`)
+  setTab('historial')
+}
+
+// ── HISTORIAL ──────────────────────────────────
+async function cargarHistorial() {
+  // Despachos
+  const { data: desps } = await supabase
+    .from('despachos')
+    .select(`
+      folio, estado, creado_en, notas,
+      usuarios!vendedor_id ( nombre ),
+      detalle_despacho ( cantidad_confirmada, productos ( nombre ) )
+    `)
+    .order('creado_en', { ascending: false })
+    .limit(15)
+
+  const listaDes = document.getElementById('lista-despachos')
+  listaDes.innerHTML = !desps?.length
+    ? '<div class="empty">Sin despachos</div>'
+    : desps.map(d => {
+        const vend     = Array.isArray(d.usuarios) ? d.usuarios[0]?.nombre : d.usuarios?.nombre || '—'
+        const fecha    = new Date(d.creado_en).toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' })
+        const detalles = Array.isArray(d.detalle_despacho) ? d.detalle_despacho : []
+        const chips    = detalles.map(det => {
+          const nom = Array.isArray(det.productos) ? det.productos[0]?.nombre : det.productos?.nombre || '—'
+          return `<span class="chip green">+${det.cantidad_confirmada} ${nom}</span>`
+        }).join('')
+        return `
+        <div class="desp-item">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="desp-folio">#${d.folio}</div>
+              <div class="desp-info">${vend} · ${fecha}</div>
+            </div>
+            <span class="badge ${d.estado === 'confirmado' ? 'b-conf' : d.estado === 'pendiente' ? 'b-pend' : 'b-canc'}">${d.estado}</span>
+          </div>
+          <div class="desp-chips">${chips}</div>
+        </div>`
+      }).join('')
+
+  // Entradas
+  const { data: ents } = await supabase
+    .from('entradas_bodega')
+    .select(`
+      folio, tipo, proveedor, num_factura, creado_en,
+      detalle_entrada_bodega ( cantidad, stock_nuevo, productos ( nombre ) )
+    `)
+    .order('creado_en', { ascending: false })
+    .limit(15)
+
+  const listaEnt = document.getElementById('lista-entradas')
+  listaEnt.innerHTML = !ents?.length
+    ? '<div class="empty">Sin entradas</div>'
+    : ents.map(e => {
+        const fecha    = new Date(e.creado_en).toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' })
+        const detalles = Array.isArray(e.detalle_entrada_bodega) ? e.detalle_entrada_bodega : []
+        const chips    = detalles.map(d => {
+          const nom = Array.isArray(d.productos) ? d.productos[0]?.nombre : d.productos?.nombre || '—'
+          const col = d.cantidad >= 0 ? 'green' : ''
+          return `<span class="chip ${col}">${d.cantidad >= 0 ? '+' : ''}${d.cantidad} ${nom}</span>`
+        }).join('')
+        const tipoBadge = { compra:'b-conf', ajuste:'b-pend' }[e.tipo] || 'b-canc'
+        return `
+        <div class="ent-item">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="ent-folio">#${e.folio}</div>
+              <div class="ent-info">${fecha}${e.proveedor ? ' · ' + e.proveedor : ''}${e.num_factura ? ' · ' + e.num_factura : ''}</div>
+            </div>
+            <span class="badge ${tipoBadge}">${e.tipo}</span>
+          </div>
+          <div class="desp-chips">${chips}</div>
+        </div>`
+      }).join('')
+}
+
+window.setTab = async t => {
+  ;['stock','despacho','entrada','historial'].forEach(x => {
+    document.getElementById(`tab-${x}`).classList.toggle('active', x === t)
+    document.getElementById(`vista-${x}`).classList.toggle('active', x === t)
+  })
+  if (t === 'historial') await cargarHistorial()
+}
+
+iniciar()
+window.cerrarSesion = logout
+</script>
+</body>
+</html>

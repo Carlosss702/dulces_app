@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cortes — Dulces</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <style>
+    body{background:#f5f3ee;min-height:100vh}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#534AB7;color:#fff}
+    .topbar-titulo{font-size:16px;font-weight:500}
+    .btn-salir{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;width:auto}
+    .nav{display:flex;background:#fff;border-bottom:0.5px solid #eee;overflow-x:auto}
+    .nav::-webkit-scrollbar{display:none}
+    .nav-item{padding:12px 16px;font-size:13px;font-weight:500;color:#888;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s}
+    .nav-item.active{color:#534AB7;border-bottom-color:#534AB7}
+    .seccion{padding:12px 16px}
+    .card-b{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;border:0.5px solid #eee}
+    .card-label{font-size:12px;color:#888;font-weight:500;margin-bottom:10px}
+    .campo{margin-bottom:10px}
+    .campo label{display:block;font-size:12px;color:#888;margin-bottom:4px}
+    .campo input,.campo select{width:100%;box-sizing:border-box}
+    .prod-row{display:grid;grid-template-columns:1fr 65px 65px 65px 80px;gap:6px;align-items:center;padding:6px 0;border-bottom:0.5px solid #f0ede6;font-size:13px}
+    .prod-row:last-child{border-bottom:none}
+    .prod-row.hdr{font-size:10px;color:#888;font-weight:500;padding-bottom:4px}
+    .num-in{width:100%;box-sizing:border-box;text-align:center;padding:5px 4px;font-size:13px;border:0.5px solid #ddd;border-radius:6px;background:#f9f9f9;color:#1a1a1a}
+    .vendido-calc{text-align:center;font-weight:500;color:#1D9E75}
+    .subtotal-val{text-align:right;font-size:12px;font-weight:500;color:#534AB7}
+    .resumen-fila{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:0.5px solid #f0ede6}
+    .resumen-fila:last-child{border-bottom:none}
+    .rf-label{color:#888}
+    .rf-val{font-weight:500}
+    .rf-val.green{color:#1D9E75}
+    .rf-val.red{color:#A32D2D}
+    .rf-val.amber{color:#BA7517}
+    .total-sueldo{display:flex;justify-content:space-between;font-size:18px;font-weight:600;padding-top:10px;margin-top:6px;border-top:1px solid #ddd}
+    .comision-box{background:#E1F5EE;border-radius:10px;padding:12px 14px;margin:10px 0;display:flex;justify-content:space-between;align-items:center}
+    .cb-label{font-size:13px;color:#085041;font-weight:500}
+    .cb-sub{font-size:11px;color:#0F6E56;margin-top:2px}
+    .cb-num{font-size:22px;font-weight:600;color:#085041}
+    .faltante-box{border-radius:8px;padding:10px 12px;margin:8px 0;font-size:13px}
+    .fb-ok{background:#E1F5EE;color:#085041}
+    .fb-warn{background:#FCEBEB;color:#791F1F;border:0.5px solid #F09595}
+    .btn-aprobar{width:100%;padding:13px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;margin-bottom:8px}
+    .btn-sec{width:100%;padding:11px;background:#fff;color:#888;border:0.5px solid #ddd;border-radius:10px;font-size:14px;cursor:pointer}
+    .corte-item{padding:12px 0;border-bottom:0.5px solid #f0ede6;display:flex;justify-content:space-between;align-items:center}
+    .corte-item:last-child{border-bottom:none}
+    .ci-folio{font-size:13px;font-weight:500;color:#1a1a1a}
+    .ci-sub{font-size:11px;color:#888;margin-top:2px}
+    .ci-sueldo{font-size:15px;font-weight:600;color:#1D9E75}
+    .badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}
+    .b-aprobado{background:#E1F5EE;color:#085041}
+    .b-abierto{background:#FAEEDA;color:#633806}
+    .tabs{display:flex;gap:6px;padding:12px 16px 0}
+    .tab-btn{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:500;border-radius:8px;border:0.5px solid #ddd;background:#fff;cursor:pointer;color:#888;transition:all .15s}
+    .tab-btn.active{background:#534AB7;color:#fff;border-color:#534AB7}
+    .empty{text-align:center;padding:2rem;color:#bbb;font-size:13px}
+    .loading{text-align:center;padding:2rem;color:#aaa;font-size:14px}
+    .aviso-green{background:#E1F5EE;color:#085041;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:8px}
+    .aviso-amber{background:#FAEEDA;color:#633806;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:8px}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-titulo">Cortes semanales</div>
+  <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+</div>
+
+<div class="nav">
+  <div class="nav-item" onclick="location.href='dashboard.html'">Dashboard</div>
+  <div class="nav-item" onclick="location.href='reportes.html'">Reportes</div>
+  <div class="nav-item active">Cortes</div>
+  <div class="nav-item" onclick="location.href='bodega.html'">Bodega</div>
+  <div class="nav-item" onclick="location.href='vendedores.html'">Vendedores</div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tab-nuevo" onclick="setTab('nuevo')">Nuevo corte</button>
+  <button class="tab-btn" id="tab-historial" onclick="setTab('historial')">Historial</button>
+</div>
+
+<div id="vista-nuevo" class="seccion">
+
+  <div class="card-b">
+    <div class="card-label">Datos del corte</div>
+    <div class="campo">
+      <label>Vendedor</label>
+      <select id="sel-vendedor" onchange="cargarInventario()">
+        <option value="">Seleccionar...</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="campo" style="flex:1">
+        <label>Fecha inicio</label>
+        <input type="date" id="fecha-ini"
+          oninput="if(vendedorSel) cargarInventario()">
+      </div>
+      <div class="campo" style="flex:1">
+        <label>Fecha fin</label>
+        <input type="date" id="fecha-fin"
+          oninput="if(vendedorSel) cargarInventario()">
+      </div>
+    </div>
+  </div>
+
+  <div class="card-b">
+    <div class="card-label">Inventario — cargado vs regresado</div>
+    <div id="aviso-despachos"></div>
+    <div class="prod-row hdr">
+      <span>Producto</span>
+      <span style="text-align:center">Cargó</span>
+      <span style="text-align:center">Regresó</span>
+      <span style="text-align:center;color:#1D9E75">Vendido</span>
+      <span style="text-align:right">Subtotal</span>
+    </div>
+    <div id="prod-inventario">
+      <div class="empty">Selecciona un vendedor</div>
+    </div>
+  </div>
+
+  <div class="card-b">
+    <div class="card-label">Liquidación</div>
+    <div class="campo">
+      <label>Efectivo entregado ($)</label>
+      <input type="number" id="efectivo" placeholder="0.00" step="0.50" oninput="recalcular()">
+    </div>
+    <div class="campo">
+      <label>Ventas a crédito ($)</label>
+      <input type="number" id="creditos" placeholder="0.00" step="0.50" oninput="recalcular()">
+    </div>
+    <div class="campo">
+      <label>Cobros de créditos anteriores ($)</label>
+      <input type="number" id="cobros-ant" placeholder="0.00" step="0.50" oninput="recalcular()">
+    </div>
+    <div class="campo">
+      <label>Merma / producto dañado ($)</label>
+      <input type="number" id="merma" placeholder="0.00" step="0.50" oninput="recalcular()">
+    </div>
+    <div class="campo">
+      <label>Notas del dueño</label>
+      <input type="text" id="notas-dueno" placeholder="Observaciones...">
+    </div>
+  </div>
+
+  <div class="card-b" id="resumen-calculo">
+    <div class="empty">Captura el inventario para ver el cálculo</div>
+  </div>
+
+  <button class="btn-aprobar" id="btn-aprobar" disabled onclick="aprobarCorte()">
+    Aprobar corte y calcular sueldo
+  </button>
+  <button class="btn-sec" onclick="setTab('historial')">Ver historial de cortes</button>
+</div>
+
+<div id="vista-historial" class="seccion" style="display:none">
+  <div class="card-b" id="lista-cortes">
+    <div class="loading">Cargando...</div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, getUsuario, cerrarSesion as logout }
+  from '../js/supabase.js'
+
+function getNumSemana(fecha = new Date()) {
+  const d = new Date(fecha)
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7))
+  const inicioAnio = new Date(d.getFullYear(), 0, 1)
+  return Math.ceil((((d - inicioAnio) / 86400000) + 1) / 7)
+}
+
+let productos       = []
+let inventario      = {}
+let montoInventario = 0
+let vendedorSel     = null
+let usuarioAdmin    = null
+const UMBRAL        = 21000
+const PCT_BAJO      = 7
+const PCT_ALTO      = 8
+
+async function iniciar() {
+  usuarioAdmin = await getUsuario()
+  if (!usuarioAdmin) { location.href = '../paginas/login.html'; return }
+  if (!['dueno','admin'].includes(usuarioAdmin.rol)) { location.href = '../paginas/ruta.html'; return }
+
+  const hoy   = new Date()
+  const lunes = new Date(hoy)
+  lunes.setDate(hoy.getDate() - ((hoy.getDay() || 7) - 1))
+  document.getElementById('fecha-ini').value = lunes.toISOString().split('T')[0]
+  document.getElementById('fecha-fin').value = hoy.toISOString().split('T')[0]
+
+  const { data: vends } = await supabase
+    .from('usuarios')
+    .select('id,nombre,comision_pct_bajo,comision_pct_alto,comision_umbral')
+    .eq('rol', 'vendedor')
+    .eq('activo', true)
+  const sel = document.getElementById('sel-vendedor')
+  ;(vends || []).forEach(v => {
+    const o = document.createElement('option')
+    o.value       = JSON.stringify(v)
+    o.textContent = v.nombre
+    sel.appendChild(o)
+  })
+
+  const { data: prods } = await supabase
+    .from('productos')
+    .select('id,nombre,precio_unitario')
+    .eq('activo', true)
+  productos = prods || []
+  productos.forEach(p => {
+    inventario[p.id] = { cargado: 0, regresado: 0 }
+  })
+}
+
+// Carga automática desde despachos confirmados
+window.cargarInventario = async () => {
+  const val = document.getElementById('sel-vendedor').value
+  if (!val) return
+  vendedorSel = JSON.parse(val)
+
+  // Resetear inventario
+  productos.forEach(p => {
+    inventario[p.id] = { cargado: 0, regresado: 0 }
+  })
+
+  const fechaIni = document.getElementById('fecha-ini').value
+  const fechaFin = document.getElementById('fecha-fin').value
+  const aviso    = document.getElementById('aviso-despachos')
+
+  // Buscar despachos confirmados en el rango
+  const { data: despachos } = await supabase
+    .from('despachos')
+    .select(`
+      id, creado_en,
+      detalle_despacho (
+        producto_id,
+        cantidad_confirmada,
+        cantidad_despachada
+      )
+    `)
+    .eq('vendedor_id', vendedorSel.id)
+    .eq('estado', 'confirmado')
+    .gte('creado_en', fechaIni + 'T00:00:00')
+    .lte('creado_en', fechaFin + 'T23:59:59')
+
+  // Sumar cantidades de todos los despachos
+  let totalPiezas = 0
+  ;(despachos || []).forEach(desp => {
+    const detalles = Array.isArray(desp.detalle_despacho)
+      ? desp.detalle_despacho : []
+    detalles.forEach(d => {
+      if (inventario[d.producto_id] !== undefined) {
+        const cant = d.cantidad_confirmada ?? d.cantidad_despachada ?? 0
+        inventario[d.producto_id].cargado += cant
+        totalPiezas += cant
+      }
+    })
+  })
+
+  // Mostrar aviso
+  if (totalPiezas > 0) {
+    aviso.innerHTML = `<div class="aviso-green">
+      Carga precargada desde ${(despachos||[]).length} despacho(s) confirmado(s) 
+      — ${totalPiezas} piezas en total. Puedes ajustar si es necesario.
+    </div>`
+  } else {
+    aviso.innerHTML = `<div class="aviso-amber">
+      Sin despachos confirmados en este período. Captura manualmente.
+    </div>`
+  }
+
+  renderInventario()
+}
+
+function renderInventario() {
+  document.getElementById('prod-inventario').innerHTML =
+    productos.map(p => {
+      const inv     = inventario[p.id]
+      const vendido = Math.max(0, inv.cargado - inv.regresado)
+      const sub     = vendido * parseFloat(p.precio_unitario)
+      return `
+      <div class="prod-row">
+        <div>
+          <div style="font-weight:500;font-size:13px">${p.nombre}</div>
+          <div style="font-size:11px;color:#aaa">$${parseFloat(p.precio_unitario).toFixed(2)} c/u</div>
+        </div>
+        <input class="num-in" type="number" min="0" value="${inv.cargado}"
+          oninput="updInv('${p.id}','cargado',this.value)">
+        <input class="num-in" type="number" min="0" value="${inv.regresado}"
+          oninput="updInv('${p.id}','regresado',this.value)">
+        <div class="vendido-calc" id="vend-${p.id}">${vendido}</div>
+        <div class="subtotal-val"  id="sub-${p.id}">$${sub.toFixed(2)}</div>
+      </div>`
+    }).join('')
+  recalcular()
+}
+
+window.updInv = (id, campo, val) => {
+  inventario[id][campo] = Math.max(0, parseInt(val) || 0)
+  const p       = productos.find(x => x.id === id)
+  const vendido = Math.max(0, inventario[id].cargado - inventario[id].regresado)
+  const sub     = vendido * parseFloat(p.precio_unitario)
+  const elV = document.getElementById(`vend-${id}`)
+  const elS = document.getElementById(`sub-${id}`)
+  if (elV) elV.textContent = vendido
+  if (elS) elS.textContent = `$${sub.toFixed(2)}`
+  recalcular()
+}
+
+window.recalcular = () => {
+  if (!vendedorSel) return
+
+  montoInventario = 0
+  productos.forEach(p => {
+    const inv     = inventario[p.id]
+    const vendido = Math.max(0, inv.cargado - inv.regresado)
+    montoInventario += vendido * parseFloat(p.precio_unitario)
+  })
+
+  const efectivo  = parseFloat(document.getElementById('efectivo').value)  || 0
+  const creditos  = parseFloat(document.getElementById('creditos').value)   || 0
+  const cobrosAnt = parseFloat(document.getElementById('cobros-ant').value) || 0
+  const merma     = parseFloat(document.getElementById('merma').value)      || 0
+
+  const totalJust  = efectivo + creditos + cobrosAnt + merma
+  const diferencia = totalJust - montoInventario
+  const faltante   = diferencia < 0 ? Math.abs(diferencia) : 0
+
+  const umbral   = vendedorSel.comision_umbral || UMBRAL
+  const pct      = montoInventario >= umbral
+    ? (vendedorSel.comision_pct_alto || PCT_ALTO)
+    : (vendedorSel.comision_pct_bajo || PCT_BAJO)
+  const comision = montoInventario * (pct / 100)
+  const sueldo   = comision - faltante
+
+  document.getElementById('resumen-calculo').innerHTML = `
+    <div class="card-label">Cálculo del corte</div>
+    <div class="resumen-fila">
+      <span class="rf-label">Monto por inventario</span>
+      <span class="rf-val">$${montoInventario.toFixed(2)}</span>
+    </div>
+    <div class="resumen-fila">
+      <span class="rf-label">Efectivo entregado</span>
+      <span class="rf-val">$${efectivo.toFixed(2)}</span>
+    </div>
+    <div class="resumen-fila">
+      <span class="rf-label">+ Ventas a crédito</span>
+      <span class="rf-val amber">$${creditos.toFixed(2)}</span>
+    </div>
+    <div class="resumen-fila">
+      <span class="rf-label">+ Cobros anteriores</span>
+      <span class="rf-val">$${cobrosAnt.toFixed(2)}</span>
+    </div>
+    <div class="resumen-fila">
+      <span class="rf-label">+ Merma justificada</span>
+      <span class="rf-val">$${merma.toFixed(2)}</span>
+    </div>
+    <div class="resumen-fila">
+      <span class="rf-label">Diferencia</span>
+      <span class="rf-val ${diferencia < 0 ? 'red' : diferencia === 0 ? 'green' : 'amber'}">
+        ${diferencia >= 0 ? '+' : ''}$${diferencia.toFixed(2)}
+      </span>
+    </div>
+    <div class="comision-box">
+      <div>
+        <div class="cb-label">Comisión ${pct}%</div>
+        <div class="cb-sub">
+          ${montoInventario >= umbral
+            ? 'Superó umbral $' + umbral.toLocaleString()
+            : 'Bajo umbral $'  + umbral.toLocaleString()}
+        </div>
+      </div>
+      <div class="cb-num">$${comision.toFixed(2)}</div>
+    </div>
+    ${faltante > 0
+      ? `<div class="faltante-box fb-warn">Faltante confirmado: $${faltante.toFixed(2)} — se descuenta del sueldo</div>`
+      : `<div class="faltante-box fb-ok">Corte cuadrado — sin faltante</div>`}
+    <div class="total-sueldo">
+      <span>Sueldo a pagar</span>
+      <span style="color:${sueldo >= 0 ? '#1D9E75' : '#A32D2D'}">$${sueldo.toFixed(2)}</span>
+    </div>`
+
+  document.getElementById('btn-aprobar').disabled = montoInventario === 0
+}
+
+window.aprobarCorte = async () => {
+  if (!vendedorSel) return
+  const btn = document.getElementById('btn-aprobar')
+  btn.disabled    = true
+  btn.textContent = 'Guardando...'
+
+  const efectivo  = parseFloat(document.getElementById('efectivo').value)  || 0
+  const creditos  = parseFloat(document.getElementById('creditos').value)   || 0
+  const cobrosAnt = parseFloat(document.getElementById('cobros-ant').value) || 0
+  const merma     = parseFloat(document.getElementById('merma').value)      || 0
+  const notas     = document.getElementById('notas-dueno').value || null
+  const fechaIni  = document.getElementById('fecha-ini').value
+  const fechaFin  = document.getElementById('fecha-fin').value
+
+  const totalJust  = efectivo + creditos + cobrosAnt + merma
+  const diferencia = totalJust - montoInventario
+  const faltante   = diferencia < 0 ? Math.abs(diferencia) : 0
+  const umbral     = vendedorSel.comision_umbral || UMBRAL
+  const pct        = montoInventario >= umbral
+    ? (vendedorSel.comision_pct_alto || PCT_ALTO)
+    : (vendedorSel.comision_pct_bajo || PCT_BAJO)
+  const comision   = montoInventario * (pct / 100)
+  const sueldo     = comision - faltante
+
+  const ahora  = new Date()
+  const anio   = ahora.getFullYear()
+  const semana = String(getNumSemana(ahora)).padStart(2, '0')
+  const ts     = Date.now().toString().slice(-4)
+  const folio  = `CS-${anio}-S${semana}-${vendedorSel.nombre.split(' ')[0].toUpperCase().slice(0,4)}-${ts}`
+
+  const { data: corte, error } = await supabase
+    .from('cortes')
+    .insert({
+      folio,
+      vendedor_id          : vendedorSel.id,
+      fecha_inicio         : fechaIni,
+      fecha_fin            : fechaFin,
+      monto_inventario     : montoInventario,
+      efectivo_entregado   : efectivo,
+      creditos_semana      : creditos,
+      cobros_credito_ant   : cobrosAnt,
+      merma,
+      diferencia,
+      comision_pct_aplicado: pct,
+      comision_calculada   : comision,
+      descuento_faltante   : faltante,
+      sueldo_final         : sueldo,
+      estado               : 'aprobado',
+      notas_dueno          : notas,
+      aprobado_por         : usuarioAdmin.id,
+      aprobado_en          : new Date().toISOString()
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error(error)
+    alert('Error al guardar el corte: ' + error.message)
+    btn.disabled    = false
+    btn.textContent = 'Aprobar corte y calcular sueldo'
+    return
+  }
+
+  const cargas = productos
+    .filter(p => inventario[p.id].cargado > 0)
+    .map(p => ({
+      corte_id          : corte.id,
+      producto_id       : p.id,
+      cantidad_cargada  : inventario[p.id].cargado,
+      cantidad_regresada: inventario[p.id].regresado,
+      subtotal          : Math.max(0,
+        inventario[p.id].cargado - inventario[p.id].regresado) *
+        parseFloat(p.precio_unitario)
+    }))
+  await supabase.from('carga_inventario').insert(cargas)
+
+  generarPDF(corte, folio, sueldo, comision, pct,
+    faltante, montoInventario, efectivo, creditos, cobrosAnt, merma)
+}
+
+function generarPDF(corte, folio, sueldo, comision, pct,
+  faltante, montoInv, efectivo, creditos, cobrosAnt, merma) {
+
+  const fechaEmision = new Date().toLocaleDateString('es-MX', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  })
+  const numSemana = getNumSemana(
+    new Date(document.getElementById('fecha-ini').value + 'T12:00:00'))
+  const fechaIni  = document.getElementById('fecha-ini').value
+  const fechaFin  = document.getElementById('fecha-fin').value
+
+  const filasProd = productos
+    .filter(p => inventario[p.id].cargado > 0)
+    .map(p => {
+      const cargado   = inventario[p.id].cargado
+      const regresado = inventario[p.id].regresado
+      const vendido   = Math.max(0, cargado - regresado)
+      const subtotal  = vendido * parseFloat(p.precio_unitario)
+      return `<tr>
+        <td style="padding:6px 4px;border-bottom:0.5px solid #eee">${p.nombre}</td>
+        <td style="text-align:right;padding:6px 4px;border-bottom:0.5px solid #eee">${cargado}</td>
+        <td style="text-align:right;padding:6px 4px;border-bottom:0.5px solid #eee">${regresado}</td>
+        <td style="text-align:right;padding:6px 4px;border-bottom:0.5px solid #eee;font-weight:600;color:#1D9E75">${vendido}</td>
+        <td style="text-align:right;padding:6px 4px;border-bottom:0.5px solid #eee">$${parseFloat(p.precio_unitario).toFixed(2)}</td>
+        <td style="text-align:right;padding:6px 4px;border-bottom:0.5px solid #eee;font-weight:600">$${subtotal.toFixed(2)}</td>
+      </tr>`
+    }).join('')
+
+  const resumenFilas = [
+    ['Monto por inventario', montoInv,  ''],
+    ['Efectivo entregado',   efectivo,  ''],
+    ['+ Ventas a crédito',   creditos,  'color:#854F0B'],
+    ['+ Cobros anteriores',  cobrosAnt, ''],
+    ['+ Merma',              merma,     ''],
+    [`Comisión ${pct}%`,     comision,  'color:#1D9E75'],
+    faltante > 0 ? ['Descuento faltante', -faltante, 'color:#A32D2D'] : null
+  ].filter(Boolean).map(([lbl, val, sty]) =>
+    `<tr>
+      <td style="padding:5px 4px;border-bottom:0.5px solid #f0f0f0;color:#555">${lbl}</td>
+      <td style="text-align:right;padding:5px 4px;border-bottom:0.5px solid #f0f0f0;font-weight:500;${sty}">
+        $${Math.abs(val).toFixed(2)}
+      </td>
+    </tr>`
+  ).join('')
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Corte ${folio}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;color:#1a1a1a;padding:32px;max-width:700px;margin:0 auto}
+    @media print{body{padding:16px}.no-print{display:none}}
+  </style>
+</head>
+<body>
+  <div style="display:flex;justify-content:space-between;border-bottom:2px solid #1D9E75;padding-bottom:16px;margin-bottom:20px">
+    <div>
+      <div style="font-size:22px;font-weight:700">Dulces Distribuidora</div>
+      <div style="font-size:13px;color:#888;margin-top:4px">Corte semana ${numSemana} · ${new Date().getFullYear()}</div>
+      <div style="font-size:13px;color:#888">${fechaIni} al ${fechaFin}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="background:#E1F5EE;color:#085041;font-size:13px;font-weight:700;padding:6px 14px;border-radius:20px;display:inline-block">APROBADO</div>
+      <div style="font-size:12px;color:#888;margin-top:6px">Folio #${folio}</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;background:#f8f8f6;border-radius:8px;padding:16px;margin-bottom:24px;font-size:13px">
+    <div>
+      <div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:4px">Vendedor</div>
+      <strong>${vendedorSel.nombre}</strong>
+    </div>
+    <div>
+      <div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:4px">Aprobado por</div>
+      <strong>${usuarioAdmin.nombre}</strong>
+    </div>
+    <div>
+      <div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:4px">Fecha emisión</div>
+      ${fechaEmision}
+    </div>
+  </div>
+
+  <div style="font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Inventario</div>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px">
+    <thead>
+      <tr style="border-bottom:2px solid #ddd">
+        <th style="text-align:left;padding:6px 4px;color:#888">Producto</th>
+        <th style="text-align:right;padding:6px 4px;color:#888">Cargó</th>
+        <th style="text-align:right;padding:6px 4px;color:#888">Regresó</th>
+        <th style="text-align:right;padding:6px 4px;color:#1D9E75">Vendido</th>
+        <th style="text-align:right;padding:6px 4px;color:#888">Precio</th>
+        <th style="text-align:right;padding:6px 4px;color:#888">Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>${filasProd}</tbody>
+  </table>
+
+  <div style="font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Resumen financiero</div>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px">
+    <tbody>${resumenFilas}</tbody>
+  </table>
+  <div style="display:flex;justify-content:space-between;font-size:17px;font-weight:700;padding:12px 0;border-top:2px solid #1a1a1a">
+    <span>Sueldo a pagar</span>
+    <span style="color:#1D9E75">$${sueldo.toFixed(2)}</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;padding-top:20px;border-top:1px dashed #ccc">
+    <div style="text-align:center">
+      <div style="border-bottom:1px solid #999;height:50px;margin-bottom:8px"></div>
+      <div style="font-size:11px;color:#888">Firma del vendedor</div>
+      <div style="font-size:13px;font-weight:600;margin-top:3px">${vendedorSel.nombre}</div>
+    </div>
+    <div style="text-align:center">
+      <div style="border-bottom:1px solid #999;height:50px;margin-bottom:8px"></div>
+      <div style="font-size:11px;color:#888">Aprobado por</div>
+      <div style="font-size:13px;font-weight:600;margin-top:3px">${usuarioAdmin.nombre}</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;font-size:11px;color:#aaa;margin-top:24px;padding-top:16px;border-top:0.5px solid #eee">
+    Folio #${folio} · ${fechaEmision}
+  </div>
+
+  <div class="no-print" style="text-align:center;margin-top:24px">
+    <button onclick="window.print()"
+      style="padding:12px 32px;background:#1D9E75;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer">
+      Descargar / Imprimir PDF
+    </button>
+  </div>
+</body>
+</html>`
+
+  const ventana = window.open('', '_blank', 'width=750,height=900')
+  ventana.document.write(html)
+  ventana.document.close()
+  ventana.onload = () => setTimeout(() => ventana.print(), 400)
+
+  setTab('historial')
+}
+
+window.setTab = async t => {
+  ;['nuevo','historial'].forEach(x => {
+    document.getElementById(`tab-${x}`).classList.toggle('active', x === t)
+    document.getElementById(`vista-${x}`).style.display = x === t ? 'block' : 'none'
+  })
+  if (t === 'historial') await cargarHistorial()
+}
+
+async function cargarHistorial() {
+  const { data: cortes } = await supabase
+    .from('cortes')
+    .select(`folio, fecha_inicio, fecha_fin, monto_inventario, sueldo_final, estado, aprobado_en, usuarios!vendedor_id ( nombre )`)
+    .order('aprobado_en', { ascending: false })
+    .limit(20)
+
+  const lista = document.getElementById('lista-cortes')
+  if (!cortes || !cortes.length) {
+    lista.innerHTML = '<div class="empty">Sin cortes aún</div>'
+    return
+  }
+
+  lista.innerHTML = cortes.map(c => {
+    const vend = Array.isArray(c.usuarios) ? c.usuarios[0]?.nombre : c.usuarios?.nombre || '—'
+    return `
+    <div class="corte-item">
+      <div>
+        <div class="ci-folio">#${c.folio}</div>
+        <div class="ci-sub">
+          ${vend} · Semana ${getNumSemana(new Date(c.fecha_inicio + 'T12:00:00'))}
+          — ${c.fecha_inicio} al ${c.fecha_fin}
+        </div>
+        <div class="ci-sub">Vendido: $${parseFloat(c.monto_inventario).toFixed(2)}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="ci-sueldo">$${parseFloat(c.sueldo_final).toFixed(2)}</div>
+        <span class="badge ${c.estado === 'aprobado' ? 'b-aprobado' : 'b-abierto'}">${c.estado}</span>
+      </div>
+    </div>`
+  }).join('')
+}
+
+iniciar()
+window.cerrarSesion = logout
+</script>
+</body>
+</html>
